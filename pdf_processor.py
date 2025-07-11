@@ -30,7 +30,8 @@ def parse_arguments():
     return parser.parse_args()
 
 def main():
-    from pdf_processor import PDFOCRProcessor, main as processor_main
+    from pdf_processor.processing.pdf_processor import PDFProcessor
+    from pdf_processor.cli import main as cli_main
     
     print("🚀 PDF OCR Processor v2.0")
     args = parse_arguments()
@@ -40,18 +41,34 @@ def main():
     if args.input:
         config['input_path'] = args.input
     if args.output:
-        config['output_folder'] = args.output
+        config['output_dir'] = args.output  # Changed from output_folder to output_dir to match PDFProcessorConfig
     if args.model:
-        config['model'] = args.model
+        config['ocr_model'] = args.model  # Changed from model to ocr_model to match PDFProcessorConfig
     if args.workers:
-        config['workers'] = args.workers
+        config['max_workers'] = args.workers  # Changed from workers to max_workers to match PDFProcessorConfig
     
-    # Uruchom główną funkcję z modułu
+    # Create processor with config
     try:
-        processor_main(config=config)
+        # Initialize the processor with config
+        processor_config = PDFProcessorConfig(**config)
+        processor = PDFProcessor(processor_config)
+        
+        # Check if input is a file or directory
+        input_path = Path(config.get('input_path', '.'))
+        if input_path.is_file():
+            # Process a single file
+            print(f"Przetwarzanie pliku: {input_path}")
+            result = processor.process_pdf(input_path)
+            print(f"Zakończono przetwarzanie. Wynik zapisano w: {result.get('output_path')}")
+        else:
+            # Process a directory
+            print(f"Przetwarzanie plików w katalogu: {input_path}")
+            results = processor.process_directory(input_path)
+            print(f"Zakończono przetwarzanie {len(results)} plików.")
+            
     except KeyboardInterrupt:
         print("\nPrzerwano działanie przez użytkownika.")
-        sys.exit(0)
+        sys.exit(1)
     except Exception as e:
         print(f"\n❌ Wystąpił błąd: {str(e)}")
         if args.verbose:

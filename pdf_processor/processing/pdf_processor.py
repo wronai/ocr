@@ -345,6 +345,15 @@ class PDFProcessor:
             )
             raise
     
+    def cleanup_resources(self):
+        """Clean up resources used by the processor."""
+        if hasattr(self, 'image_enhancer') and hasattr(self.image_enhancer, 'cleanup_resources'):
+            self.image_enhancer.cleanup_resources()
+        if hasattr(self, 'ocr_processor') and hasattr(self.ocr_processor, 'cleanup_resources'):
+            self.ocr_processor.cleanup_resources()
+        if hasattr(self, 'svg_generator') and hasattr(self.svg_generator, 'cleanup_resources'):
+            self.svg_generator.cleanup_resources()
+    
     def process_directory(
         self,
         input_dir: Optional[Union[str, Path]] = None,

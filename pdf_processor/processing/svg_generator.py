@@ -103,13 +103,18 @@ class SVGGenerator:
             config.page_width = img_width
             config.page_height = img_height
         
-        # Create SVG root element
+        # Create root element with proper namespaces
         svg_ns = "http://www.w3.org/2000/svg"
+        xlink_ns = "http://www.w3.org/1999/xlink"
+        
+        # Register namespaces
         ET.register_namespace('', svg_ns)
+        ET.register_namespace('xlink', xlink_ns)
         
         # Create root element with proper namespaces
         svg_attribs = {
             'xmlns': svg_ns,
+            'xmlns:xlink': xlink_ns,
             'width': f"{config.page_width}px",
             'height': f"{config.page_height}px",
             'viewBox': f"0 0 {config.page_width} {config.page_height}",
@@ -277,15 +282,17 @@ class SVGGenerator:
             img_b64 = base64.b64encode(img_data).decode('ascii')
             img_url = f"data:{mime_type};base64,{img_b64}"
             
-            # Add image element
-            ET.SubElement(parent, 'image', {
+            # Add image element with proper namespacing
+            image_attrs = {
                 'x': '0',
                 'y': '0',
                 'width': '100%',
                 'height': '100%',
                 'preserveAspectRatio': 'xMidYMid meet',
-                'xlink:href': img_url
-            })
+                '{http://www.w3.org/1999/xlink}href': img_url
+            }
+            # Add the image element
+            ET.SubElement(parent, 'image', image_attrs)
             
         except Exception as e:
             self.logger.error(f"Failed to add image to SVG: {e}", exc_info=True)
@@ -425,16 +432,33 @@ class SVGGenerator:
         }).text = config.watermark
     
     def _tostring(self, element: ET.Element, config: SVGConfig) -> str:
-        """Convert an XML element to a string."""
-        # Convert to string
+        """Convert an XML element to a string with proper namespace handling."""
+        # Define namespaces
+        namespaces = {
+            '': 'http://www.w3.org/2000/svg',
+            'xlink': 'http://www.w3.org/1999/xlink'
+        }
+        
+        # Register namespaces for proper serialization
+        for prefix, uri in namespaces.items():
+            ET.register_namespace(prefix, uri)
+        
+        # Convert to string with proper namespaces
         xml_str = ET.tostring(element, encoding=config.encoding)
         
         # Pretty-print if requested
         if config.pretty_print:
             try:
                 from xml.dom import minidom
-                dom = minidom.parseString(xml_str)
-                xml_str = dom.toprettyxml(encoding=config.encoding)
+                from xml.parsers.expat import ExpatError
+                
+                # Parse with minidom
+                try:
+                    dom = minidom.parseString(xml_str)
+                    xml_str = dom.toprettyxml(encoding=config.encoding)
+                except ExpatError as e:
+                    # If pretty printing fails, fall back to unformatted XML
+                    self.logger.warning(f"XML parsing error during pretty printing: {e}")
             except Exception as e:
                 self.logger.warning(f"Failed to pretty-print XML: {e}")
         
@@ -442,7 +466,16 @@ class SVGGenerator:
         if isinstance(xml_str, bytes):
             xml_str = xml_str.decode(config.encoding)
         
+        # Ensure xlink namespace is properly declared in the output
+        if 'xmlns:xlink="http://www.w3.org/1999/xlink"' not in xml_str:
+            # If the namespace is missing, add it to the root element
+            xml_str = xml_str.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"', 1)
+        
         # Remove XML declaration if present (some SVG viewers don't like it)
         xml_str = re.sub(r'^<\?xml[^>]*>\s*', '', xml_str)
+        
+        # Ensure proper xlink namespace format
+        xml_str = xml_str.replace('ns0:', 'xlink:')
+        xml_str = xml_str.replace(':ns0', ':xlink')
         
         return xml_str.strip()

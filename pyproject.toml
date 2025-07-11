@@ -172,9 +172,7 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "--verbose",
-    "--tb=short",
-    "--cov=pdf_processor",
-    "--cov-report=term-missing"
+    "--tb=short"
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
