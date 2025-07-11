@@ -465,40 +465,112 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                            x="0" y="0"/>
                 '''
                 
-                # Dodaj metadane OCR
+                # Add OCR text layer with enhanced positioning and interactivity
                 if ocr_result and isinstance(ocr_result, dict):
-                    # Extract text safely
-                    ocr_text = ''
                     try:
-                        if 'text' in ocr_result:
-                            # If the text looks like JSON, try to parse it
-                            if isinstance(ocr_result['text'], str) and '{"' in ocr_result['text']:
-                                try:
-                                    json_text = json.loads(ocr_result['text'])
-                                    if isinstance(json_text, dict) and 'text' in json_text:
-                                        ocr_text = json_text['text']
-                                    else:
-                                        ocr_text = str(json_text)[:500]  # Truncate if too long
-                                except json.JSONDecodeError:
-                                    ocr_text = ocr_result['text'][:500]  # Use raw text if not JSON
-                            else:
-                                ocr_text = str(ocr_result['text'])[:500]  # Truncate long text
+                        # Extract text blocks with their positions
+                        blocks = []
+                        if 'blocks' in ocr_result and isinstance(ocr_result['blocks'], list):
+                            blocks = ocr_result['blocks']
                         
-                        # Clean the text for XML
-                        clean_text = (ocr_text
-                                    .replace('&', '&amp;')
-                                    .replace('<', '&lt;')
-                                    .replace('>', '&gt;')
-                                    .replace('"', '&quot;')
-                                    .replace("'", '&apos;'))
+                        # Add a group for the text layer
+                        svg_content += f'<g id="page-{i+1}-text-layer" class="text-layer">\n'
+                        # Add each text block
+                        for block_idx, block in enumerate(blocks):
+                            if not isinstance(block, dict):
+                                continue
+                                
+                            # Get block properties with defaults
+                            text = str(block.get('text', ''))
+                            bbox = block.get('bbox', [0, 0, 0, 0])
+                            confidence = block.get('confidence', 0.8)
+                            
+                            # Clean the text for XML
+                            clean_text = (text
+                                        .replace('&', '&amp;')
+                                        .replace('<', '&lt;')
+                                        .replace('>', '&gt;')
+                                        .replace('"', '&quot;')
+                                        .replace("'", '&apos;'))
+                            
+                            if not clean_text.strip():
+                                continue
+                            
+                            # Calculate dimensions
+                            x, y, width, height = bbox
+                            
+                            # Add a background rectangle for the text block
+                            svg_content += (
+                                f'<g class="text-block" data-block-id="{block_idx}" '
+                                f'data-confidence="{confidence:.2f}">\n'
+                                # Background highlight on hover
+                                f'<rect class="text-bg" x="{x}" y="{y}" '
+                                f'width="{max(1, width)}" height="{max(1, height)}" '
+                                f'fill-opacity="{0.1 + (confidence * 0.4)}" />\n'
+                                # Invisible text for selection and search
+                                f'<text class="selectable-text" x="{x}" y="{y + 10}" '
+                                f'font-size="{max(8, height/2)}" '
+                                f'fill-opacity="0" fill="#000">\n'
+                                # Add text with proper positioning
+                                f'<tspan x="{x}" dy="1.2em">{clean_text}</tspan>\n'
+                                '</text>\n'
+                                # Visible text (not selectable)
+                                f'<text class="visible-text" x="{x}" y="{y + 10}" '
+                                f'font-size="{max(8, height/2)}" '
+                                f'fill="#000" fill-opacity="0.9">\n'
+                                f'<tspan x="{x}" dy="1.2em">{clean_text}</tspan>\n'
+                                '</text>\n'
+                                # Confidence indicator
+                                f'<rect class="confidence-indicator" x="{x}" '
+                                f'y="{y + height - 2}" width="{width * confidence}" '
+                                f'height="2" fill="#4CAF50" />\n'
+                                '</g>\n'
+                            )
                         
-                        # Add to SVG
-                        if clean_text.strip():
-                            svg_content += f'<text x="10" y="20" class="ocr-text searchable" opacity="0">{clean_text}</text>\n'
+                        svg_content += '</g>\n'
+                        # Add CSS for text layer
+                        svg_content += """
+                        <style type="text/css">
+                            .text-layer {
+                                pointer-events: none;
+                            }
+                            .text-block {
+                                pointer-events: all;
+                                cursor: text;
+                            }
+                            .text-block:hover .text-bg {
+                                fill: rgba(100, 180, 255, 0.3) !important;
+                            }
+                            .selectable-text {
+                                user-select: text;
+                                -webkit-user-select: text;
+                                -moz-user-select: text;
+                                -ms-user-select: text;
+                                pointer-events: auto;
+                            }
+                            .visible-text {
+                                pointer-events: none;
+                            }
+                            .confidence-indicator {
+                                opacity: 0.6;
+                                transition: opacity 0.2s;
+                            }
+                            .text-block:hover .confidence-indicator {
+                                opacity: 1;
+                            }
+                            .text-bg {
+                                fill: #4a86e8;
+                                transition: fill 0.2s, fill-opacity 0.2s;
+                            }
+                        </style>
+                        """
+
                     except Exception as e:
-                        logger.warning(f"Błąd przetwarzania wyniku OCR: {e}")
-                        # Add a placeholder if there was an error
-                        svg_content += '<text x="10" y="20" class="ocr-text searchable" opacity="0">[Błąd przetwarzania OCR]</text>\n'
+                        logger.warning(f"Błąd przetwarzania warstwy tekstowej: {e}")
+                        # Fallback to simple text if there was an error
+                        svg_content += ('<text x="10" y="20" class="ocr-text" '
+                                     'font-family="Arial" font-size="12" fill="red">'
+                                     f'[Błąd warstwy tekstowej: {str(e)[:50]}]</text>\n')
                 svg_content += '</g>\n'
             # Zamknij znaczniki SVG
             svg_content += '''
