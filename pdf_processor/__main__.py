@@ -59,11 +59,13 @@ Options:
     
     # Run the processor
     processor = PDFOCRProcessor(
-        input_dir=config['input_dir'],
-        output_dir=config['output_dir'],
-        show_ocr_highlights=config['show_ocr_highlights'],
-        translate_to_polish=config['translate_to_polish']
+        documents_folder=config['input_dir'],
+        output_folder=config['output_dir']
     )
+    
+    # Set additional options
+    processor.show_ocr_highlights = config['show_ocr_highlights']
+    processor.translate_to_polish = config['translate_to_polish']
     
     return processor.process_all_pdfs(
         model=config['model'],
