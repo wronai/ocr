@@ -13,7 +13,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from PIL import Image
 import io
 import time
@@ -416,426 +416,45 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
             grid_width = (max_width + 20) * num_columns
             grid_height = (max_height + 20) * num_rows
 
-            # Utwórz element root SVG
-            svg_root = ET.Element("svg", {
-                "xmlns": "http://www.w3.org/2000/svg",
-                "xmlns:xlink": "http://www.w3.org/1999/xlink",
+            # Tworzenie głównego elementu SVG
+        svg_root = ET.Element("svg", 
+            nsmap={None: "http://www.w3.org/2000/svg", "xlink": "http://www.w3.org/1999/xlink"},
+            attrib={
                 "width": str(max_width),
                 "height": str(total_height),
                 "viewBox": f"0 0 {max_width} {total_height}",
                 "data-display-mode": self.display_mode,
                 "data-translate-to-polish": str(self.translate_to_polish).lower()
-            })
+            }
+        )
 
             # Dodaj metadane dokumentu i kontrolki interfejsu
             self._add_document_metadata(svg_root, pdf_path, len(image_paths))
-            
-            # Kontener dla trybu przewijania
-            scroll_container = ET.SubElement(svg_root, "g", {
-                "id": "scroll-container",
-                "class": "scroll-container" + ("" if self.display_mode == 'scroll' else " hidden")
-            })
-            
-            # Kontener dla trybu siatki
-            grid_container = ET.SubElement(svg_root, "g", {
-                "id": "grid-container",
-                "class": "grid-container" + ("" if self.display_mode == 'grid' else " hidden")
-            })
-            
-            # Dodaj każdą stronę do obu kontenerów (scroll i grid)
-            for i, (image_path, ocr_result, (page_w, page_h)) in enumerate(
-                    zip(image_paths, ocr_results, page_dimensions)
-            ):
-                y_offset = i * max_height
-                
-                # Dodaj stronę do kontenera przewijania
-                self._add_page_to_svg(
-                    scroll_container, i, image_path, ocr_result,
-                    page_w, page_h, max_width, max_height, y_offset
-                )
-                
-                # Dodaj stronę do kontenera siatki
-                self._add_page_to_svg(
-                    grid_container, i, image_path, ocr_result,
-                    page_w, page_h, max_width, max_height, y_offset
-                )
-
-            # Zapisz SVG z propertyownym formatowaniem
-            self._save_svg_with_formatting(svg_root, svg_path)
-
-            logger.info(f"✓ Wygenerowano SVG: {svg_path}")
-            return str(svg_path)
-
-        except Exception as e:
-            logger.error(f"Błąd tworzenia SVG: {e}")
-            return ""
-
-    def _add_document_metadata(self, svg_root: ET.Element, pdf_path: str, page_count: int):
-        """Dodaje metadane dokumentu do SVG"""
-        # Główne metadane dokumentu
-        metadata = ET.SubElement(svg_root, "metadata")
-        doc_info = ET.SubElement(metadata, "document-info")
-        doc_info.set("source", str(Path(pdf_path).name))
-        doc_info.set("pages", str(page_count))
-        doc_info.set("creation-date", datetime.now().isoformat())
-        doc_info.set("processor", "PDF-OCR-Processor-v2")
-        doc_info.set("display-mode", self.display_mode)
-        doc_info.set("translate-to-polish", str(self.translate_to_polish).lower())
-        
-        # Dodaj style CSS
-        style = ET.SubElement(svg_root, "style", {"type": "text/css"})
-        css = """
-            .controls {
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 10px;
-                border-radius: 5px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.2);
-                z-index: 1000;
-                font-family: Arial, sans-serif;
-                font-size: 12px;
-            }
-            .control-group {
-                margin-bottom: 8px;
-            }
-            .control-label {
-                display: block;
-                margin-bottom: 3px;
-                font-weight: bold;
-            }
-            button {
-                background: #4CAF50;
-                border: none;
-                color: white;
-                padding: 5px 10px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 12px;
-                margin: 2px 2px;
-                cursor: pointer;
-                border-radius: 3px;
-            }
-            button.active {
-                background: #2196F3;
-            }
-            .ocr-highlight {
-                fill: rgba(255, 255, 0, 0.2);
-                stroke: #FFC107;
-                stroke-width: 0.5;
-                pointer-events: all;
-            }
-            .ocr-highlight:hover {
-                fill: rgba(255, 235, 59, 0.3);
-            }
-            .ocr-text {
-                display: none;
-            }
-            .translation {
-                fill: #2196F3;
-                font-size: 12px;
-                pointer-events: none;
-            }
-            .page {
-                margin-bottom: 20px;
-                border: 1px solid #eee;
-            }
-            .grid-container {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-                gap: 20px;
-                padding: 10px;
-            }
-            .scroll-container {
-                display: block;
-            }
-            .hidden {
-                display: none;
-            }
-        """
-        style.text = css
-        
-        # Dodaj kontrolki interfejsu użytkownika
-        controls = ET.SubElement(svg_root, "foreignObject", {
-            "x": "0",
-            "y": "0",
-            "width": "100%",
-            "height": "100%",
-            "class": "controls"
-        })
-        
-        controls_div = ET.SubElement(controls, "div", {"xmlns": "http://www.w3.org/1999/xhtml"})
-        
-        # Przyciski tłumaczenia
-        trans_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
-        ET.SubElement(trans_group, "div", {"class": "control-label"}).text = "Tłumaczenie"
-        btn_original = ET.SubElement(trans_group, "button", {
-            "id": "btn-original",
-            "class": "active"
-        })
-        btn_original.text = self.translations.get('show_original', 'Show Original')
-        
-        btn_translate = ET.SubElement(trans_group, "button", {"id": "btn-translate"})
-        btn_translate.text = self.translations.get('show_translation', 'Show Translation')
-        
-        # Przyciski trybu wyświetlania
-        mode_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
-        ET.SubElement(mode_group, "div", {"class": "control-label"}).text = self.translations.get('display_mode', 'Display Mode')
-        
-        btn_scroll = ET.SubElement(mode_group, "button", {
-            "id": "btn-scroll",
-            "class": "active" if self.display_mode == 'scroll' else ''
-        })
-        btn_scroll.text = self.translations.get('mode_scroll', 'Scroll')
-        
-        btn_grid = ET.SubElement(mode_group, "button", {
-            "id": "btn-grid",
-            "class": "active" if self.display_mode == 'grid' else ''
-        })
-        btn_grid.text = self.translations.get('mode_grid', 'Grid')
-        
-        # Przycisk podświetleń OCR
-        highlight_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
-        btn_highlight = ET.SubElement(highlight_group, "button", {"id": "btn-highlight"})
-        btn_highlight.text = self.translations.get('toggle_highlights', 'Toggle OCR Highlights')
-        
-        # Skrypt JavaScript do obsługi interakcji
-        script = ET.SubElement(svg_root, "script", {"type": "text/javascript"})
-        js = """
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementy interfejsu
-            const btnOriginal = document.getElementById('btn-original');
-            const btnTranslate = document.getElementById('btn-translate');
-            const btnScroll = document.getElementById('btn-scroll');
-            const btnGrid = document.getElementById('btn-grid');
-            const btnHighlight = document.getElementById('btn-highlight');
-            const pages = document.querySelectorAll('.page-container');
-            const gridContainer = document.getElementById('grid-container');
-            const scrollContainer = document.getElementById('scroll-container');
-            
-            // Inicjalizacja kontenerów
-            if (gridContainer && scrollContainer) {
-                if (document.querySelector('svg').getAttribute('data-display-mode') === 'grid') {
-                    showGrid();
-                } else {
-                    showScroll();
-                }
-            }
-            
-            // Obsługa przycisków tłumaczenia
-            if (btnOriginal && btnTranslate) {
-                btnOriginal.addEventListener('click', function() {
-                    document.querySelectorAll('.translation').forEach(el => el.classList.add('hidden'));
-                    btnOriginal.classList.add('active');
-                    btnTranslate.classList.remove('active');
-                });
-                
-                btnTranslate.addEventListener('click', function() {
-                    document.querySelectorAll('.translation').forEach(el => el.classList.remove('hidden'));
-                    btnTranslate.classList.add('active');
-                    btnOriginal.classList.remove('active');
-                });
-            }
-            
-            // Obsługa przycisków trybu wyświetlania
-            if (btnScroll && btnGrid) {
-                btnScroll.addEventListener('click', showScroll);
-                btnGrid.addEventListener('click', showGrid);
-            }
-            
-            // Obsługa podświetleń OCR
-            if (btnHighlight) {
-                btnHighlight.addEventListener('click', function() {
-                    const highlights = document.querySelectorAll('.ocr-highlight');
-                    highlights.forEach(hl => {
-                        if (hl.style.display === 'none') {
-                            hl.style.display = '';
-                        } else {
-                            hl.style.display = 'none';
-                        }
-                    });
-                });
-            }
-            
-            function showScroll() {
-                if (gridContainer && scrollContainer) {
-                    gridContainer.classList.add('hidden');
-                    scrollContainer.classList.remove('hidden');
-                    btnScroll.classList.add('active');
-                    btnGrid.classList.remove('active');
-                    document.querySelector('svg').setAttribute('data-display-mode', 'scroll');
-                }
-            }
-            
-            function showGrid() {
-                if (gridContainer && scrollContainer) {
-                    gridContainer.classList.remove('hidden');
-                    scrollContainer.classList.add('hidden');
-                    btnGrid.classList.add('active');
-                    btnScroll.classList.remove('active');
-                    document.querySelector('svg').setAttribute('data-display-mode', 'grid');
-                }
-            }
-        });
-        """
-        script.text = js
-
-    def _add_page_to_svg(self, svg_root: ET.Element, page_index: int, image_path: str,
-                         ocr_result: Dict[str, Any], page_w: int, page_h: int,
-                         max_w: int, max_h: int, y_offset: int):
-        """Dodaje pojedynczą stronę do SVG"""
-        # Oblicz skalowanie dla centrowania
-        scale_x = max_w / page_w if page_w > 0 else 1
-        scale_y = max_h / page_h if page_h > 0 else 1
-        scale = min(scale_x, scale_y, 1)  # Nie powiększaj
-        
-        scaled_w = page_w * scale
-        scaled_h = page_h * scale
-        offset_x = (max_w - scaled_w) / 2
-        
-        # Kontener strony - scroll
-        page_container = ET.SubElement(svg_root, "g", {
-            "id": f"page_container_{page_index + 1}",
-            "class": f"page-container scroll-container",
-            "transform": f"translate(0, {y_offset})"
-        })
-        
-        # Kontener strony - grid
-        grid_col = page_index % 2
-        grid_row = page_index // 2
-        grid_x = grid_col * (max_w + 20)  # 20px odstęp między kolumnami
-        grid_y = grid_row * (max_h + 20)  # 20px odstęp między wierszami
-        
-        page_grid = ET.SubElement(svg_root, "g", {
-            "id": f"page_grid_{page_index + 1}",
-            "class": f"page-container grid-container hidden",
-            "transform": f"translate({grid_x}, {grid_y})"
-        })
-        
-        # Dodaj tło strony
-        for container in [page_container, page_grid]:
-            ET.SubElement(container, "rect", {
-                "x": "0",
-                "y": "0",
-                "width": str(max_w),
-                "height": str(max_h),
-                "fill": "white",
-                "stroke": "#ccc",
-                "stroke-width": "1"
-            })
-        
-        # Grupa dla zawartości strony (scroll)
-        page_group = ET.SubElement(page_container, "g", {
-            "id": f"page_{page_index + 1}",
-            "class": "page-content"
-        })
-        
-        # Grupa dla zawartości strony (grid)
-        page_group_grid = ET.SubElement(page_grid, "g", {
-            "id": f"page_grid_content_{page_index + 1}",
-            "class": "page-content"
-        })
-        
-        # Dodaj numer strony
-        for group in [page_group, page_group_grid]:
-            ET.SubElement(group, "text", {
-                "x": "10",
-                "y": "20",
-                "font-family": "Arial",
-                "font-size": "14",
-                "font-weight": "bold"
-            }).text = f"Strona {page_index + 1}"
-
-        # Dodaj obraz (optymalizowany)
-        try:
-            # Sprawdź rozmiar pliku obrazu
-            img_size = Path(image_path).stat().st_size
-            if img_size > 5 * 1024 * 1024:  # 5MB
-                logger.warning(f"Duży obraz ({img_size / 1024 / 1024:.1f}MB): {image_path}")
-
-            # Osadź obraz jako base64
-            with open(image_path, 'rb') as img_file:
-                img_data = base64.b64encode(img_file.read()).decode('utf-8')
-
-            # Oblicz skalowanie dla centrowania
-            scale_x = max_w / page_w if page_w > 0 else 1
-            scale_y = max_h / page_h if page_h > 0 else 1
-            scale = min(scale_x, scale_y, 1)  # Nie powiększaj
-
-            scaled_w = page_w * scale
-            scaled_h = page_h * scale
-            offset_x = (max_w - scaled_w) / 2
-
-            image_elem = ET.SubElement(page_group, "image", {
-                "x": str(offset_x),
-                "y": "0",
-                "width": str(scaled_w),
-                "height": str(scaled_h),
-                "href": f"data:image/png;base64,{img_data}",
-                "preserveAspectRatio": "xMidYMin meet"
-            })
-
-        except Exception as e:
-            logger.error(f"Błąd dodawania obrazu do SVG: {e}")
-
-        # Dodaj metadane OCR
-        self._add_ocr_metadata_to_page(page_group, ocr_result, scale, offset_x)
-
-    def _add_ocr_metadata_to_page(self, page_group: ET.Element, ocr_result: Dict[str, Any],
-                                 scale: float, offset_x: float):
-        """
-        Dodaje metadane OCR do strony wraz z warstwą tekstu do zaznaczania
-        
-        Args:
-            page_group: Element SVG, do którego dodajemy metadane
-            ocr_result: Wynik OCR z danymi tekstowymi i bounding boxami
-            scale: Skala do przeskalowania współrzędnych
-            offset_x: Przesunięcie X dla wycentrowania
-        """
-        # Pobierz grupę nadrzędną (scroll lub grid)
-        parent_group = page_group.getparent()
-        is_grid = 'grid' in parent_group.get('class', '')
-        
-        # Metadane strony
-        page_metadata = ET.SubElement(page_group, "metadata")
-        ocr_info = ET.SubElement(page_metadata, "ocr-data")
-        ocr_info.set("confidence", str(ocr_result.get("confidence", 0.0)))
-        ocr_info.set("language", ocr_result.get("language", "unknown"))
-        ocr_info.set("text-length", str(len(ocr_result.get("text", ""))))
-        
-        # Dodaj oryginalny język jako atrybut
-        if 'language' in ocr_result and ocr_result['language'] != 'unknown':
-            page_group.set("data-original-language", ocr_result['language'])
-            
-        # Dodaj styl CSS dla warstwy tekstu
-        style = """
+{{ ... }}
         .ocr-text-overlay {
             pointer-events: all;
             user-select: text;
             -webkit-user-select: text;
             font-family: Arial, sans-serif;
-            fill: #000;
-            white-space: pre;
-        }
-        .ocr-text-bg {
-            fill: rgba(255, 255, 255, 0.7);
-            pointer-events: none;
-        }
-        .ocr-text-block {
-            cursor: text;
-        }
-        .ocr-text-block:hover .ocr-text-bg {
-            fill: rgba(200, 230, 255, 0.8);
-        }
+           # Dodaj styl CSS
+        style = ET.SubElement(page_group, "style")
+        style.text = """
+        .text-block { cursor: pointer; }
+        .text-block:hover { opacity: 0.8; }
+        .ocr-highlight { fill: rgba(255, 255, 0, 0.3); stroke: #FFD700; stroke-width: 1; }
+        .ocr-text { font-family: Arial, sans-serif; }
+        .ocr-text-bg { fill: white; fill-opacity: 0.8; }
+        .ocr-text-overlay { fill: black; }
+        .translation { font-style: italic; fill: #2196F3; }
+        .hidden { display: none; }
+        .searchable { opacity: 0; position: absolute; pointer-events: none; }
         """
-        ET.SubElement(page_group, "style").text = style
 
         # Główny tekst (niewidoczny, dla wyszukiwania)
         if ocr_result.get("text"):
             text_elem = ET.SubElement(page_group, "text", {
                 "x": str(offset_x),
+{{ ... }}
                 "y": "40",  # Niżej, aby uniknąć nakładania się z numerem strony
                 "opacity": "0",
                 "font-size": "1",
@@ -933,12 +552,9 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
         ))
 
         # Zapisz z odpowiednim encoding
-        tree = ET.ElementTree(svg_root)
-        ET.indent(tree, space="  ", level=0)  # Formatowanie
-
         with open(svg_path, 'wb') as f:
             f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
-            tree.write(f, encoding='utf-8')
+            f.write(ET.tostring(svg_root, pretty_print=True, encoding='utf-8', xml_declaration=False))
 
     def process_pdf(self, pdf_path: str, ocr_model: str = "llava:7b",
                     parallel_ocr: bool = True) -> Dict[str, Any]:
