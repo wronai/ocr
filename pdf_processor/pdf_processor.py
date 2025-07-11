@@ -417,55 +417,117 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
             grid_height = (max_height + 20) * num_rows
 
             # Tworzenie głównego elementu SVG
-        svg_root = ET.Element("svg", 
-            nsmap={None: "http://www.w3.org/2000/svg", "xlink": "http://www.w3.org/1999/xlink"},
-            attrib={
-                "width": str(max_width),
-                "height": str(total_height),
-                "viewBox": f"0 0 {max_width} {total_height}",
-                "data-display-mode": self.display_mode,
-                "data-translate-to-polish": str(self.translate_to_polish).lower()
-            }
-        )
+            svg_root = ET.Element("svg", 
+                nsmap={None: "http://www.w3.org/2000/svg", "xlink": "http://www.w3.org/1999/xlink"},
+                attrib={
+                    "width": str(max_width),
+                    "height": str(total_height),
+                    "viewBox": f"0 0 {max_width} {total_height}",
+                    "data-display-mode": self.display_mode,
+                    "data-translate-to-polish": str(self.translate_to_polish).lower()
+                }
+            )
 
             # Dodaj metadane dokumentu i kontrolki interfejsu
             self._add_document_metadata(svg_root, pdf_path, len(image_paths))
-{{ ... }}
+            
+            # Dodaj grupę dla stron
+            pages_group = ET.SubElement(svg_root, "g", attrib={"id": "pages"})
+
+            # Dodaj strony
+            for i, (image_path, ocr_result) in enumerate(zip(image_paths, ocr_results)):
+                page_group = ET.SubElement(pages_group, "g", attrib={"id": f"page_{i+1}"})
+                
+                # Dodaj obraz jako tło
+                image_elem = ET.SubElement(page_group, "image", 
+                    attrib={
+                        "xlink:href": str(image_path),
+                        "width": str(page_dimensions[i][0]),
+                        "height": str(page_dimensions[i][1]),
+                        "x": "0",
+                        "y": str(i * max_height)
+                    }
+                )
+                
+                # Dodaj metadane OCR
+                self._add_ocr_metadata_to_page(page_group, ocr_result, 1.0, 0.0)
+
+            # Zapisz SVG
+            self._save_svg_with_formatting(svg_root, svg_path)
+
+            return svg_path
+
+        except Exception as e:
+            logger.error(f"Błąd podczas tworzenia SVG {pdf_path}: {e}")
+            return ""
+
+    def _add_ocr_metadata_to_page(self, page_group: ET.Element, ocr_result: Dict[str, Any],
+                                 scale: float, offset_x: float):
+        """
+        Dodaje metadane OCR do strony wraz z warstwą tekstu do zaznaczania
+        
+        Args:
+            page_group: Element SVG, do którego dodajemy metadane
+            ocr_result: Wynik OCR z danymi tekstowymi i bounding boxami
+            scale: Skala do przeskalowania współrzędnych
+            offset_x: Przesunięcie X dla wycentrowania
+        """
+        # Pobierz grupę nadrzędną (scroll lub grid)
+        parent = page_group.getparent()
+        is_grid = 'grid' in parent.get('class', '') if parent is not None else False
+        
+        # Metadane strony
+        page_metadata = ET.SubElement(page_group, "metadata")
+        ocr_info = ET.SubElement(page_metadata, "ocr-data")
+        ocr_info.set("confidence", str(ocr_result.get("confidence", 0.0)))
+        ocr_info.set("language", str(ocr_result.get("language", "unknown")))
+        ocr_info.set("text-length", str(len(ocr_result.get("text", ""))))
+        
+        # Dodaj oryginalny język jako atrybut
+        if 'language' in ocr_result and ocr_result['language'] != 'unknown':
+            page_group.set("data-original-language", str(ocr_result['language']))
+            
+        # Dodaj styl CSS dla warstwy tekstu
+        style = ET.SubElement(page_group, "style")
+        style.text = """
         .ocr-text-overlay {
             pointer-events: all;
             user-select: text;
             -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
             font-family: Arial, sans-serif;
-           # Dodaj styl CSS
-        style = ET.SubElement(page_group, "style")
-        style.text = """
-        .text-block { cursor: pointer; }
-        .text-block:hover { opacity: 0.8; }
-        .ocr-highlight { fill: rgba(255, 255, 0, 0.3); stroke: #FFD700; stroke-width: 1; }
-        .ocr-text { font-family: Arial, sans-serif; }
-        .ocr-text-bg { fill: white; fill-opacity: 0.8; }
-        .ocr-text-overlay { fill: black; }
-        .translation { font-style: italic; fill: #2196F3; }
-        .hidden { display: none; }
-        .searchable { opacity: 0; position: absolute; pointer-events: none; }
+            fill: #000;
+            white-space: pre;
+        }
+        .ocr-text-bg {
+            fill: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+        }
+        .ocr-text-block {
+            cursor: text;
+        }
+        .ocr-text-block:hover .ocr-text-bg {
+            fill: rgba(200, 230, 255, 0.8);
+        }
         """
 
         # Główny tekst (niewidoczny, dla wyszukiwania)
         if ocr_result.get("text"):
-            text_elem = ET.SubElement(page_group, "text", {
-                "x": str(offset_x),
-{{ ... }}
-                "y": "40",  # Niżej, aby uniknąć nakładania się z numerem strony
-                "opacity": "0",
-                "font-size": "1",
-                "class": "ocr-text searchable"
-            })
-            text_elem.text = ocr_result["text"][:1000]  # Ogranicz długość
+            text_elem = ET.SubElement(page_group, "text", 
+                x=str(offset_x),
+                y="40",  # Niżej, aby uniknąć nakładania się z numerem strony
+                opacity="0",
+                font_size="1",
+                class_="ocr-text searchable"
+            )
+            text_elem.text = str(ocr_result["text"][:1000])  # Ogranicz długość
 
         # Bloki tekstu z pozycjami
         for i, block in enumerate(ocr_result.get("blocks", [])):
             if "bbox" in block and len(block["bbox"]) >= 4:
                 x, y, w, h = block["bbox"][:4]
+                
 
                 # Przeskaluj współrzędne
                 scaled_x = x * scale + offset_x
@@ -547,14 +609,19 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
     def _save_svg_with_formatting(self, svg_root: ET.Element, svg_path: Path):
         """Zapisuje SVG z właściwym formatowaniem"""
         # Dodaj komentarz informacyjny
-        svg_root.insert(0, ET.Comment(
-            f" Generated by PDF-OCR-Processor on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
-        ))
+        comment = ET.Comment(f" Generated by PDF-OCR-Processor on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ")
+        svg_root.addprevious(comment)
+
+        # Upewnij się, że mamy prawidłowe przestrzenie nazw
+        svg_root.attrib['xmlns'] = "http://www.w3.org/2000/svg"
+        svg_root.attrib['xmlns:xlink'] = "http://www.w3.org/1999/xlink"
 
         # Zapisz z odpowiednim encoding
         with open(svg_path, 'wb') as f:
             f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
-            f.write(ET.tostring(svg_root, pretty_print=True, encoding='utf-8', xml_declaration=False))
+            # Użyj tostring z opcją with_tail=False, aby uniknąć niechcianych końcówek
+            f.write(ET.tostring(svg_root, pretty_print=True, encoding='utf-8', 
+                              xml_declaration=False, with_tail=False))
 
     def process_pdf(self, pdf_path: str, ocr_model: str = "llava:7b",
                     parallel_ocr: bool = True) -> Dict[str, Any]:
