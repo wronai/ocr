@@ -784,7 +784,7 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
         self._add_ocr_metadata_to_page(page_group, ocr_result, scale, offset_x)
 
     def _add_ocr_metadata_to_page(self, page_group: ET.Element, ocr_result: Dict[str, Any],
-                                scale: float, offset_x: float):
+                                 scale: float, offset_x: float):
         """
         Dodaje metadane OCR do strony wraz z warstwą tekstu do zaznaczania
         
@@ -860,35 +860,19 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                 # Grupa dla bloku
                 block_group = ET.SubElement(page_group, "g", {
                     "id": f"{page_group.get('id')}_{block_id}",
-                    "class": "text-block",
+                    "class": "text-block ocr-text-block",  # Dodano klasę ocr-text-block
                     "data-confidence": str(block.get("confidence", 0.0)),
                     "data-language": str(block.get("language", "unknown")),
                     "data-original-text": block.get("text", "")[:500]  # Zachowaj oryginalny tekst
                 })
                 
-                # Dodaj podświetlenie bloku (widoczne po najechaniu)
-                if self.show_ocr_highlights and block.get('text', '').strip():
-                    highlight = ET.SubElement(block_group, "rect", {
-                        "x": str(scaled_x - 2),
-                        "y": str(scaled_y - 2),
-                        "width": str(scaled_w + 4),
-                        "height": str(scaled_h + 4),
-                        "class": "ocr-highlight",
-                        "rx": "2",
-                        "ry": "2"
-                    })
-                    
-                    # Dodaj tytuł z podglądem tekstu
-                    ET.SubElement(highlight, "title").text = block.get("text", "")[:200]
-
                 # Dodaj widoczny, zaznaczalny tekst
                 if block.get("text"):
                     # Oblicz rozmiar czcionki na podstawie wysokości bounding boxa
                     font_size = max(8, min(24, scaled_h * 0.8))  # Ogranicz rozmiar czcionki 8-24px
-                    line_height = font_size * 1.2
                     
                     # Dodaj tło dla lepszej czytelności
-                    bg_rect = ET.SubElement(block_group, "rect", {
+                    ET.SubElement(block_group, "rect", {
                         "x": str(scaled_x - 1),
                         "y": str(scaled_y - 1),
                         "width": str(scaled_w + 2),
@@ -903,13 +887,9 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                         "x": str(scaled_x + 2),  # Mały margines
                         "y": str(scaled_y + font_size),  # Ustawienie baseline
                         "font-size": f"{font_size}px",
-                        "class": "ocr-text-overlay",
-                        "data-original-text": block["text"]
+                        "class": "ocr-text-overlay"
                     })
                     text_elem.text = block["text"]
-                    
-                    # Zachowaj oryginalny tekst jako atrybut dla wyszukiwania
-                    block_group.set("data-text", block["text"][:500])
                     
                     # Dodaj tytuł z pełnym tekstem (wyświetlany po najechaniu)
                     ET.SubElement(block_group, "title").text = block["text"]
@@ -923,27 +903,27 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                         "class": "searchable"
                     })
                     hidden_text.text = block["text"]
-                    
-                    # Dodaj oryginalny tekst jako atrybut
-                    block_group.set("data-text", block["text"][:500])
-                    
-                    # Jeśli język to nie polski, dodaj tłumaczenie
-                    block_lang = block.get("language", "unknown").lower()
-                    if self.translate_to_polish and block_lang not in ['pl', 'polish', 'polski']:
-                        translated_text = self._translate_text(
-                            block["text"], 
-                            source_lang=block_lang,
-                            target_lang='pl'
-                        )
-                        if translated_text and translated_text != block["text"]:
-                            # Dodaj przetłumaczony tekst
-                            ET.SubElement(block_group, "text", {
-                                "x": str(scaled_x),
-                                "y": str(scaled_y + scaled_h + 15),  # 15px poniżej oryginału
-                                "class": "translation hidden",
-                                "font-size": "10",
-                                "fill": "#2196F3"
-                            }).text = translated_text[:200]  # Ogranicz długość
+
+                # Zachowaj oryginalny tekst jako atrybut
+                block_group.set("data-text", block.get("text", "")[:500])
+                
+                # Jeśli język to nie polski, dodaj tłumaczenie
+                block_lang = block.get("language", "unknown").lower()
+                if self.translate_to_polish and block_lang not in ['pl', 'polish', 'polski'] and block.get("text"):
+                    translated_text = self._translate_text(
+                        block["text"], 
+                        source_lang=block_lang,
+                        target_lang='pl'
+                    )
+                    if translated_text and translated_text != block["text"]:
+                        # Dodaj przetłumaczony tekst
+                        ET.SubElement(block_group, "text", {
+                            "x": str(scaled_x),
+                            "y": str(scaled_y + scaled_h + 15),  # 15px poniżej oryginału
+                            "class": "translation hidden",
+                            "font-size": "10",
+                            "fill": "#2196F3"
+                        }).text = translated_text[:200]  # Ogranicz długość
 
     def _save_svg_with_formatting(self, svg_root: ET.Element, svg_path: Path):
         """Zapisuje SVG z właściwym formatowaniem"""

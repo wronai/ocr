@@ -85,6 +85,13 @@ dev-server:
 	python -m pdf_processor.web
 
 # Quick commands
+setup:
+	@echo "Setting up development environment..."
+	python3 -m venv .venv
+	. .venv/bin/activate && \
+		pip install --upgrade pip && \
+		pip install -e .
+
 run:
 	@if [ ! -f .venv/bin/activate ]; then \
 		echo "❌ Virtual environment not found. Please run 'make setup' first."; \
