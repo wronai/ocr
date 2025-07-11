@@ -1,133 +1,79 @@
-# ocr
+# OCR Processing System
 
-# 🚀 Przewodnik szybkiego startu
+> Narzędzie do przetwarzania dokumentów PDF z zaawansowanym OCR, tłumaczeniem i wizualizacją
 
-## ⚡ Instalacja w 3 krokach
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/Docs-Read%20the%20Docs-blueviolet)](docs/README.md)
 
-```bash
-# 1. Pobierz i uruchom installer
-curl -fsSL https://raw.githubusercontent.com/your-repo/pdf-ocr-processor/main/install.sh | bash
+## 🚀 Funkcje
 
-# 2. Aktywuj środowisko
-source venv/bin/activate
+- **Zaawansowane OCR** z wykorzystaniem modeli AI (Ollama)
+- **Tłumaczenie** tekstu na język polski
+- **Dwie wersje wyświetlania**:
+  - Tryb przewijania (strona po stronie)
+  - Tryb siatki (podgląd wielu stron)
+- **Interaktywne podświetlanie** rozpoznanego tekstu
+- **Eksport do SVG** z zachowaniem warstw tekstu
 
-# 3. Sprawdź instalację
-python verify_installation.py
-```
+## 📦 Instalacja
 
-## 📄 Pierwsze użycie (5 minut)
+1. **Wymagania wstępne**
+   - Python 3.8+
+   - Ollama (https://ollama.ai)
+   - Systemowe zależności (zobacz [Instalacja](docs/getting-started/installation.md))
 
-### Krok 1: Przygotuj pliki PDF
-```bash
-# Skopiuj swoje pliki PDF
-cp ~/Pobrane/*.pdf documents/
+2. **Instalacja**
+   ```bash
+   # Sklonuj repozytorium
+   git clone https://github.com/wronai/ocr.git
+   cd ocr
+   
+   # Utwórz i aktywuj środowisko wirtualne
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # lub
+   .\venv\Scripts\activate  # Windows
+   
+   # Zainstaluj zależności
+   pip install -r requirements.txt
+   ```
 
-# Lub stwórz link symboliczny
-ln -s ~/Documents/PDFs documents/my_pdfs
-```
+## 🏁 Szybki start
 
-### Krok 2: Uruchom przetwarzanie
-```bash
-python proc.py
-```
+1. **Przygotuj dokumenty**
+   ```bash
+   mkdir -p documents
+   cp /ścieżka/do/twoich/plików/*.pdf documents/
+   ```
 
-### Krok 3: Sprawdź wyniki
-```bash
-# Lista przetworzonych plików
-ls output/
+2. **Uruchom przetwarzanie**
+   ```bash
+   python proc.py --model llava:7b --workers 4
+   ```
 
-# Otwórz SVG w przeglądarce
-firefox output/dokument_complete.svg
+3. **Zobacz wyniki**
+   - Otwórz plik `output/*_complete.svg` w przeglądarce
+   - Sprawdź szczegóły w `output/processing_report.json`
 
-# Sprawdź raport
-cat output/processing_report.json | jq
-```
+## 📚 Dokumentacja
 
-## 🎯 Typowe przypadki użycia
+Pełna dokumentacja dostępna w katalogu [docs/](docs/):
 
-### Batch processing wielu plików
-```bash
-# Skopiuj wszystkie PDFy
-find ~/Documents -name "*.pdf" -exec cp {} documents/ \;
+- [📖 Przewodnik użytkownika](docs/user-guide/README.md)
+- [⚙️ Instalacja i konfiguracja](docs/getting-started/installation.md)
+- [🔧 Referencja API](docs/api-reference/README.md)
+- [❓ Często zadawane pytania](docs/faq/README.md)
+- [👨‍💻 Rozwój i współtworzenie](docs/development/contributing.md)
 
-# Uruchom z 8 workerami
-python proc.py --workers 8 --parallel
-```
+## 📝 Licencja
 
-### Wysoka jakość OCR
-```bash
-# Użyj najlepszego modelu z wysokim DPI
-python proc.py --model llama3.2-vision --dpi 300
-```
+Ten projekt jest dostępny na licencji MIT. Zobacz plik [LICENSE](LICENSE) aby uzyskać więcej informacji.
 
-### Szybkie przetwarzanie
-```bash
-# Szybki model z niskim DPI
-python proc.py --model llava:7b --dpi 150 --workers 6
-```
+## 🤝 Współtworzenie
 
----
+Wkład jest mile widziany! Zobacz [przewodnik współtworzenia](docs/development/contributing.md) aby dowiedzieć się więcej o tym, jak możesz pomóc w rozwoju projektu.
 
-# ❓ Często zadawane pytania (FAQ)
-
-## 🔧 Instalacja i konfiguracja
-
-### Q: Skrypt instalacyjny nie działa na moim systemie
-**A:** Sprawdź czy masz zainstalowane:
-```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install python3 python3-pip curl git
-
-# CentOS/RHEL
-sudo yum install python3 python3-pip curl git
-
-# macOS
-brew install python git curl
-```
-
-### Q: Ollama nie może pobrać modeli
-**A:** Sprawdź połączenie i przestrzeń dyskową:
-```bash
-# Sprawdź wolne miejsce (potrzeba ~10GB)
-df -h
-
-# Sprawdź połączenie
-curl -I https://ollama.ai
-
-# Pobierz ręcznie
-ollama pull llava:7b
-```
-
-### Q: Python pokazuje błędy modułów
-**A:** Upewnij się że używasz środowiska wirtualnego:
-```bash
-# Aktywuj venv
-source venv/bin/activate
-
-# Sprawdź które Python używasz
-which python
-which pip
-
-# Reinstaluj pakiety
-pip install -r requirements.txt --force-reinstall
-```
-
-## 📄 Przetwarzanie dokumentów
-
-### Q: Dlaczego OCR jest wolny?
-**A:** Kilka optymalizacji:
-```bash
-# Zmniejsz rozdzielczość
-python proc.py --dpi 150
-
-# Użyj szybszego modelu
-python proc.py --model llava:7b
-
-# Zwiększ liczbę workerów
-python proc.py --workers 8
-```
-
-### Q: OCR nie rozpoznaje tekstu poprawnie
 **A:** Popraw jakość:
 ```bash
 # Zwiększ rozdzielczość

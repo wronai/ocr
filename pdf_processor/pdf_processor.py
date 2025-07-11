@@ -43,9 +43,32 @@ class PDFOCRProcessor:
         self.max_workers = 4  # Dla przetwarzania równoległego
         self.timeout = 300  # 5 minut timeout dla OCR
         self.max_image_size = (2048, 2048)  # Maksymalny rozmiar obrazu
+        
+        # Nowe opcje konfiguracyjne
+        self.translate_to_polish = True  # Domyślnie tłumacz na polski
+        self.display_mode = 'scroll'  # 'scroll' lub 'grid'
+        self.show_ocr_highlights = True  # Czy pokazywać podświetlenia OCR
 
         # Sprawdzenie czy Ollama jest dostępne
         self.available_models = self.check_ollama_and_models()
+        
+        # Słownik tłumaczeń
+        self.translations = {}
+        self._load_translations()
+        
+    def _load_translations(self):
+        """Wczytuje słownik tłumaczeń"""
+        # Można rozszerzyć o wczytywanie z pliku
+        self.translations = {
+            'page': 'Strona',
+            'of': 'z',
+            'show_original': 'Pokaż oryginał',
+            'show_translation': 'Pokaż tłumaczenie',
+            'toggle_highlights': 'Przełącz podświetlenia OCR',
+            'display_mode': 'Tryb wyświetlania',
+            'mode_scroll': 'Przewijanie',
+            'mode_grid': 'Siatka'
+        }
 
     def check_ollama_and_models(self) -> List[str]:
         """Sprawdza czy Ollama jest zainstalowana i dostępna oraz listuje modele"""
@@ -335,10 +358,27 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
 
         return ocr_results
 
+    def _translate_text(self, text: str, source_lang: str = 'auto', target_lang: str = 'pl') -> str:
+        """Tłumaczy tekst na język polski"""
+        if not text or not self.translate_to_polish or target_lang == source_lang:
+            return text
+            
+        try:
+            # Proste tłumaczenie - w rzeczywistości można by użyć API tłumacza
+            # To jest uproszczony przykład i powinien zostać zastąpiony prawdziwym tłumaczeniem
+            if source_lang.lower() != 'pl':
+                # Symulacja tłumaczenia - w rzeczywistości należy użyć API tłumacza
+                # np. Google Translate API, DeepL API itp.
+                return f"[PL] {text}"  # Tymczasowe rozwiązanie
+            return text
+        except Exception as e:
+            logger.error(f"Błąd tłumaczenia: {e}")
+            return text
+            
     def create_optimized_svg(self, pdf_path: str, image_paths: List[str],
                              ocr_results: List[Dict[str, Any]]) -> str:
         """
-        Tworzy zoptymalizowany plik SVG - POPRAWIONA WERSJA
+        Tworzy zoptymalizowany plik SVG z metadanymi OCR i tłumaczeniem
 
         Args:
             pdf_path: Ścieżka do oryginalnego PDF
@@ -367,8 +407,14 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                     logger.warning(f"Nie można odczytać wymiarów {image_path}: {e}")
                     page_dimensions.append((800, 600))  # Domyślne wymiary
 
-            # Oblicz całkowitą wysokość SVG
+            # Oblicz całkowitą wysokość SVG (dla trybu przewijania)
             total_height = max_height * len(image_paths)
+            
+            # Oblicz wymiary dla trybu siatki (2 kolumny)
+            num_columns = 2
+            num_rows = (len(image_paths) + 1) // num_columns
+            grid_width = (max_width + 20) * num_columns
+            grid_height = (max_height + 20) * num_rows
 
             # Utwórz element root SVG
             svg_root = ET.Element("svg", {
@@ -376,21 +422,41 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                 "xmlns:xlink": "http://www.w3.org/1999/xlink",
                 "width": str(max_width),
                 "height": str(total_height),
-                "viewBox": f"0 0 {max_width} {total_height}"
+                "viewBox": f"0 0 {max_width} {total_height}",
+                "data-display-mode": self.display_mode,
+                "data-translate-to-polish": str(self.translate_to_polish).lower()
             })
 
-            # Dodaj metadane dokumentu
+            # Dodaj metadane dokumentu i kontrolki interfejsu
             self._add_document_metadata(svg_root, pdf_path, len(image_paths))
-
-            # Dodaj każdą stronę
+            
+            # Kontener dla trybu przewijania
+            scroll_container = ET.SubElement(svg_root, "g", {
+                "id": "scroll-container",
+                "class": "scroll-container" + ("" if self.display_mode == 'scroll' else " hidden")
+            })
+            
+            # Kontener dla trybu siatki
+            grid_container = ET.SubElement(svg_root, "g", {
+                "id": "grid-container",
+                "class": "grid-container" + ("" if self.display_mode == 'grid' else " hidden")
+            })
+            
+            # Dodaj każdą stronę do obu kontenerów (scroll i grid)
             for i, (image_path, ocr_result, (page_w, page_h)) in enumerate(
                     zip(image_paths, ocr_results, page_dimensions)
             ):
                 y_offset = i * max_height
-
-                # Dodaj stronę do SVG
+                
+                # Dodaj stronę do kontenera przewijania
                 self._add_page_to_svg(
-                    svg_root, i, image_path, ocr_result,
+                    scroll_container, i, image_path, ocr_result,
+                    page_w, page_h, max_width, max_height, y_offset
+                )
+                
+                # Dodaj stronę do kontenera siatki
+                self._add_page_to_svg(
+                    grid_container, i, image_path, ocr_result,
                     page_w, page_h, max_width, max_height, y_offset
                 )
 
@@ -406,22 +472,281 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
 
     def _add_document_metadata(self, svg_root: ET.Element, pdf_path: str, page_count: int):
         """Dodaje metadane dokumentu do SVG"""
+        # Główne metadane dokumentu
         metadata = ET.SubElement(svg_root, "metadata")
         doc_info = ET.SubElement(metadata, "document-info")
         doc_info.set("source", str(Path(pdf_path).name))
         doc_info.set("pages", str(page_count))
         doc_info.set("creation-date", datetime.now().isoformat())
         doc_info.set("processor", "PDF-OCR-Processor-v2")
+        doc_info.set("display-mode", self.display_mode)
+        doc_info.set("translate-to-polish", str(self.translate_to_polish).lower())
+        
+        # Dodaj style CSS
+        style = ET.SubElement(svg_root, "style", {"type": "text/css"})
+        css = """
+            .controls {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 10px;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+            }
+            .control-group {
+                margin-bottom: 8px;
+            }
+            .control-label {
+                display: block;
+                margin-bottom: 3px;
+                font-weight: bold;
+            }
+            button {
+                background: #4CAF50;
+                border: none;
+                color: white;
+                padding: 5px 10px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 12px;
+                margin: 2px 2px;
+                cursor: pointer;
+                border-radius: 3px;
+            }
+            button.active {
+                background: #2196F3;
+            }
+            .ocr-highlight {
+                fill: rgba(255, 255, 0, 0.2);
+                stroke: #FFC107;
+                stroke-width: 0.5;
+                pointer-events: all;
+            }
+            .ocr-highlight:hover {
+                fill: rgba(255, 235, 59, 0.3);
+            }
+            .ocr-text {
+                display: none;
+            }
+            .translation {
+                fill: #2196F3;
+                font-size: 12px;
+                pointer-events: none;
+            }
+            .page {
+                margin-bottom: 20px;
+                border: 1px solid #eee;
+            }
+            .grid-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+                gap: 20px;
+                padding: 10px;
+            }
+            .scroll-container {
+                display: block;
+            }
+            .hidden {
+                display: none;
+            }
+        """
+        style.text = css
+        
+        # Dodaj kontrolki interfejsu użytkownika
+        controls = ET.SubElement(svg_root, "foreignObject", {
+            "x": "0",
+            "y": "0",
+            "width": "100%",
+            "height": "100%",
+            "class": "controls"
+        })
+        
+        controls_div = ET.SubElement(controls, "div", {"xmlns": "http://www.w3.org/1999/xhtml"})
+        
+        # Przyciski tłumaczenia
+        trans_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
+        ET.SubElement(trans_group, "div", {"class": "control-label"}).text = "Tłumaczenie"
+        btn_original = ET.SubElement(trans_group, "button", {
+            "id": "btn-original",
+            "class": "active"
+        })
+        btn_original.text = self.translations.get('show_original', 'Show Original')
+        
+        btn_translate = ET.SubElement(trans_group, "button", {"id": "btn-translate"})
+        btn_translate.text = self.translations.get('show_translation', 'Show Translation')
+        
+        # Przyciski trybu wyświetlania
+        mode_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
+        ET.SubElement(mode_group, "div", {"class": "control-label"}).text = self.translations.get('display_mode', 'Display Mode')
+        
+        btn_scroll = ET.SubElement(mode_group, "button", {
+            "id": "btn-scroll",
+            "class": "active" if self.display_mode == 'scroll' else ''
+        })
+        btn_scroll.text = self.translations.get('mode_scroll', 'Scroll')
+        
+        btn_grid = ET.SubElement(mode_group, "button", {
+            "id": "btn-grid",
+            "class": "active" if self.display_mode == 'grid' else ''
+        })
+        btn_grid.text = self.translations.get('mode_grid', 'Grid')
+        
+        # Przycisk podświetleń OCR
+        highlight_group = ET.SubElement(controls_div, "div", {"class": "control-group"})
+        btn_highlight = ET.SubElement(highlight_group, "button", {"id": "btn-highlight"})
+        btn_highlight.text = self.translations.get('toggle_highlights', 'Toggle OCR Highlights')
+        
+        # Skrypt JavaScript do obsługi interakcji
+        script = ET.SubElement(svg_root, "script", {"type": "text/javascript"})
+        js = """
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementy interfejsu
+            const btnOriginal = document.getElementById('btn-original');
+            const btnTranslate = document.getElementById('btn-translate');
+            const btnScroll = document.getElementById('btn-scroll');
+            const btnGrid = document.getElementById('btn-grid');
+            const btnHighlight = document.getElementById('btn-highlight');
+            const pages = document.querySelectorAll('.page-container');
+            const gridContainer = document.getElementById('grid-container');
+            const scrollContainer = document.getElementById('scroll-container');
+            
+            // Inicjalizacja kontenerów
+            if (gridContainer && scrollContainer) {
+                if (document.querySelector('svg').getAttribute('data-display-mode') === 'grid') {
+                    showGrid();
+                } else {
+                    showScroll();
+                }
+            }
+            
+            // Obsługa przycisków tłumaczenia
+            if (btnOriginal && btnTranslate) {
+                btnOriginal.addEventListener('click', function() {
+                    document.querySelectorAll('.translation').forEach(el => el.classList.add('hidden'));
+                    btnOriginal.classList.add('active');
+                    btnTranslate.classList.remove('active');
+                });
+                
+                btnTranslate.addEventListener('click', function() {
+                    document.querySelectorAll('.translation').forEach(el => el.classList.remove('hidden'));
+                    btnTranslate.classList.add('active');
+                    btnOriginal.classList.remove('active');
+                });
+            }
+            
+            // Obsługa przycisków trybu wyświetlania
+            if (btnScroll && btnGrid) {
+                btnScroll.addEventListener('click', showScroll);
+                btnGrid.addEventListener('click', showGrid);
+            }
+            
+            // Obsługa podświetleń OCR
+            if (btnHighlight) {
+                btnHighlight.addEventListener('click', function() {
+                    const highlights = document.querySelectorAll('.ocr-highlight');
+                    highlights.forEach(hl => {
+                        if (hl.style.display === 'none') {
+                            hl.style.display = '';
+                        } else {
+                            hl.style.display = 'none';
+                        }
+                    });
+                });
+            }
+            
+            function showScroll() {
+                if (gridContainer && scrollContainer) {
+                    gridContainer.classList.add('hidden');
+                    scrollContainer.classList.remove('hidden');
+                    btnScroll.classList.add('active');
+                    btnGrid.classList.remove('active');
+                    document.querySelector('svg').setAttribute('data-display-mode', 'scroll');
+                }
+            }
+            
+            function showGrid() {
+                if (gridContainer && scrollContainer) {
+                    gridContainer.classList.remove('hidden');
+                    scrollContainer.classList.add('hidden');
+                    btnGrid.classList.add('active');
+                    btnScroll.classList.remove('active');
+                    document.querySelector('svg').setAttribute('data-display-mode', 'grid');
+                }
+            }
+        });
+        """
+        script.text = js
 
     def _add_page_to_svg(self, svg_root: ET.Element, page_index: int, image_path: str,
                          ocr_result: Dict[str, Any], page_w: int, page_h: int,
                          max_w: int, max_h: int, y_offset: int):
         """Dodaje pojedynczą stronę do SVG"""
-        # Grupa dla strony
-        page_group = ET.SubElement(svg_root, "g", {
-            "id": f"page_{page_index + 1}",
+        # Oblicz skalowanie dla centrowania
+        scale_x = max_w / page_w if page_w > 0 else 1
+        scale_y = max_h / page_h if page_h > 0 else 1
+        scale = min(scale_x, scale_y, 1)  # Nie powiększaj
+        
+        scaled_w = page_w * scale
+        scaled_h = page_h * scale
+        offset_x = (max_w - scaled_w) / 2
+        
+        # Kontener strony - scroll
+        page_container = ET.SubElement(svg_root, "g", {
+            "id": f"page_container_{page_index + 1}",
+            "class": f"page-container scroll-container",
             "transform": f"translate(0, {y_offset})"
         })
+        
+        # Kontener strony - grid
+        grid_col = page_index % 2
+        grid_row = page_index // 2
+        grid_x = grid_col * (max_w + 20)  # 20px odstęp między kolumnami
+        grid_y = grid_row * (max_h + 20)  # 20px odstęp między wierszami
+        
+        page_grid = ET.SubElement(svg_root, "g", {
+            "id": f"page_grid_{page_index + 1}",
+            "class": f"page-container grid-container hidden",
+            "transform": f"translate({grid_x}, {grid_y})"
+        })
+        
+        # Dodaj tło strony
+        for container in [page_container, page_grid]:
+            ET.SubElement(container, "rect", {
+                "x": "0",
+                "y": "0",
+                "width": str(max_w),
+                "height": str(max_h),
+                "fill": "white",
+                "stroke": "#ccc",
+                "stroke-width": "1"
+            })
+        
+        # Grupa dla zawartości strony (scroll)
+        page_group = ET.SubElement(page_container, "g", {
+            "id": f"page_{page_index + 1}",
+            "class": "page-content"
+        })
+        
+        # Grupa dla zawartości strony (grid)
+        page_group_grid = ET.SubElement(page_grid, "g", {
+            "id": f"page_grid_content_{page_index + 1}",
+            "class": "page-content"
+        })
+        
+        # Dodaj numer strony
+        for group in [page_group, page_group_grid]:
+            ET.SubElement(group, "text", {
+                "x": "10",
+                "y": "20",
+                "font-family": "Arial",
+                "font-size": "14",
+                "font-weight": "bold"
+            }).text = f"Strona {page_index + 1}"
 
         # Dodaj obraz (optymalizowany)
         try:
@@ -461,18 +786,26 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
     def _add_ocr_metadata_to_page(self, page_group: ET.Element, ocr_result: Dict[str, Any],
                                   scale: float, offset_x: float):
         """Dodaje metadane OCR do strony"""
+        # Pobierz grupę nadrzędną (scroll lub grid)
+        parent_group = page_group.getparent()
+        is_grid = 'grid' in parent_group.get('class', '')
+        
         # Metadane strony
         page_metadata = ET.SubElement(page_group, "metadata")
         ocr_info = ET.SubElement(page_metadata, "ocr-data")
         ocr_info.set("confidence", str(ocr_result.get("confidence", 0.0)))
         ocr_info.set("language", ocr_result.get("language", "unknown"))
         ocr_info.set("text-length", str(len(ocr_result.get("text", ""))))
+        
+        # Dodaj oryginalny język jako atrybut
+        if 'language' in ocr_result and ocr_result['language'] != 'unknown':
+            page_group.set("data-original-language", ocr_result['language'])
 
         # Główny tekst (niewidoczny, dla wyszukiwania)
         if ocr_result.get("text"):
             text_elem = ET.SubElement(page_group, "text", {
                 "x": str(offset_x),
-                "y": "20",
+                "y": "40",  # Niżej, aby uniknąć nakładania się z numerem strony
                 "opacity": "0",
                 "font-size": "1",
                 "class": "ocr-text searchable"
@@ -486,15 +819,36 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
 
                 # Przeskaluj współrzędne
                 scaled_x = x * scale + offset_x
-                scaled_y = y * scale
+                scaled_y = y * scale + (40 if not is_grid else 0)  # Uwzględnij offset dla numeru strony w trybie scroll
                 scaled_w = w * scale
                 scaled_h = h * scale
-
+                
+                # Unikalne ID bloku
+                block_id = f"block_{i}"
+                
                 # Grupa dla bloku
                 block_group = ET.SubElement(page_group, "g", {
+                    "id": f"{page_group.get('id')}_{block_id}",
                     "class": "text-block",
-                    "data-confidence": str(block.get("confidence", 0.0))
+                    "data-confidence": str(block.get("confidence", 0.0)),
+                    "data-language": str(block.get("language", "unknown")),
+                    "data-original-text": block.get("text", "")[:500]  # Zachowaj oryginalny tekst
                 })
+                
+                # Dodaj podświetlenie bloku (widoczne po najechaniu)
+                if self.show_ocr_highlights and block.get('text', '').strip():
+                    highlight = ET.SubElement(block_group, "rect", {
+                        "x": str(scaled_x - 2),
+                        "y": str(scaled_y - 2),
+                        "width": str(scaled_w + 4),
+                        "height": str(scaled_h + 4),
+                        "class": "ocr-highlight",
+                        "rx": "2",
+                        "ry": "2"
+                    })
+                    
+                    # Dodaj tytuł z podglądem tekstu
+                    ET.SubElement(highlight, "title").text = block.get("text", "")[:200]
 
                 # Niewidoczny prostokąt (dla debugowania)
                 if logger.level <= logging.DEBUG:
@@ -509,7 +863,7 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                         "opacity": "0.3"
                     })
 
-                # Tekst bloku
+                # Tekst bloku (niewidoczny, dla wyszukiwania)
                 if block.get("text"):
                     block_text = ET.SubElement(block_group, "text", {
                         "x": str(scaled_x),
@@ -519,6 +873,27 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                         "class": "block-text"
                     })
                     block_text.text = block["text"][:200]  # Ogranicz długość
+                    
+                    # Dodaj oryginalny tekst jako atrybut
+                    block_group.set("data-text", block["text"][:500])
+                    
+                    # Jeśli język to nie polski, dodaj tłumaczenie
+                    block_lang = block.get("language", "unknown").lower()
+                    if self.translate_to_polish and block_lang not in ['pl', 'polish', 'polski']:
+                        translated_text = self._translate_text(
+                            block["text"], 
+                            source_lang=block_lang,
+                            target_lang='pl'
+                        )
+                        if translated_text and translated_text != block["text"]:
+                            # Dodaj przetłumaczony tekst
+                            ET.SubElement(block_group, "text", {
+                                "x": str(scaled_x),
+                                "y": str(scaled_y + scaled_h + 15),  # 15px poniżej oryginału
+                                "class": "translation hidden",
+                                "font-size": "10",
+                                "fill": "#2196F3"
+                            }).text = translated_text[:200]  # Ogranicz długość
 
     def _save_svg_with_formatting(self, svg_root: ET.Element, svg_path: Path):
         """Zapisuje SVG z właściwym formatowaniem"""
