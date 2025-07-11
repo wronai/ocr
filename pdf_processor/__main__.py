@@ -68,9 +68,8 @@ Options:
     processor.translate_to_polish = config['translate_to_polish']
     
     return processor.process_all_pdfs(
-        model=config['model'],
-        parallel_ocr=(config['workers'] > 1),
-        num_workers=config['workers']
+        ocr_model=config['model'],
+        parallel_ocr=(config['workers'] > 1)
     )
 
 if __name__ == "__main__":
