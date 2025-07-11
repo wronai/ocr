@@ -784,8 +784,16 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
         self._add_ocr_metadata_to_page(page_group, ocr_result, scale, offset_x)
 
     def _add_ocr_metadata_to_page(self, page_group: ET.Element, ocr_result: Dict[str, Any],
-                                  scale: float, offset_x: float):
-        """Dodaje metadane OCR do strony"""
+                                scale: float, offset_x: float):
+        """
+        Dodaje metadane OCR do strony wraz z warstwą tekstu do zaznaczania
+        
+        Args:
+            page_group: Element SVG, do którego dodajemy metadane
+            ocr_result: Wynik OCR z danymi tekstowymi i bounding boxami
+            scale: Skala do przeskalowania współrzędnych
+            offset_x: Przesunięcie X dla wycentrowania
+        """
         # Pobierz grupę nadrzędną (scroll lub grid)
         parent_group = page_group.getparent()
         is_grid = 'grid' in parent_group.get('class', '')
@@ -800,6 +808,29 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
         # Dodaj oryginalny język jako atrybut
         if 'language' in ocr_result and ocr_result['language'] != 'unknown':
             page_group.set("data-original-language", ocr_result['language'])
+            
+        # Dodaj styl CSS dla warstwy tekstu
+        style = """
+        .ocr-text-overlay {
+            pointer-events: all;
+            user-select: text;
+            -webkit-user-select: text;
+            font-family: Arial, sans-serif;
+            fill: #000;
+            white-space: pre;
+        }
+        .ocr-text-bg {
+            fill: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+        }
+        .ocr-text-block {
+            cursor: text;
+        }
+        .ocr-text-block:hover .ocr-text-bg {
+            fill: rgba(200, 230, 255, 0.8);
+        }
+        """
+        ET.SubElement(page_group, "style").text = style
 
         # Główny tekst (niewidoczny, dla wyszukiwania)
         if ocr_result.get("text"):
@@ -850,29 +881,48 @@ WAŻNE: Odpowiedz TYLKO kodem JSON, bez dodatkowych komentarzy."""
                     # Dodaj tytuł z podglądem tekstu
                     ET.SubElement(highlight, "title").text = block.get("text", "")[:200]
 
-                # Niewidoczny prostokąt (dla debugowania)
-                if logger.level <= logging.DEBUG:
-                    ET.SubElement(block_group, "rect", {
-                        "x": str(scaled_x),
-                        "y": str(scaled_y),
-                        "width": str(scaled_w),
-                        "height": str(scaled_h),
-                        "fill": "none",
-                        "stroke": "red",
-                        "stroke-width": "0.5",
-                        "opacity": "0.3"
-                    })
-
-                # Tekst bloku (niewidoczny, dla wyszukiwania)
+                # Dodaj widoczny, zaznaczalny tekst
                 if block.get("text"):
-                    block_text = ET.SubElement(block_group, "text", {
-                        "x": str(scaled_x),
-                        "y": str(scaled_y + scaled_h / 2),
+                    # Oblicz rozmiar czcionki na podstawie wysokości bounding boxa
+                    font_size = max(8, min(24, scaled_h * 0.8))  # Ogranicz rozmiar czcionki 8-24px
+                    line_height = font_size * 1.2
+                    
+                    # Dodaj tło dla lepszej czytelności
+                    bg_rect = ET.SubElement(block_group, "rect", {
+                        "x": str(scaled_x - 1),
+                        "y": str(scaled_y - 1),
+                        "width": str(scaled_w + 2),
+                        "height": str(scaled_h + 2),
+                        "class": "ocr-text-bg",
+                        "rx": "2",
+                        "ry": "2"
+                    })
+                    
+                    # Dodaj widoczny tekst
+                    text_elem = ET.SubElement(block_group, "text", {
+                        "x": str(scaled_x + 2),  # Mały margines
+                        "y": str(scaled_y + font_size),  # Ustawienie baseline
+                        "font-size": f"{font_size}px",
+                        "class": "ocr-text-overlay",
+                        "data-original-text": block["text"]
+                    })
+                    text_elem.text = block["text"]
+                    
+                    # Zachowaj oryginalny tekst jako atrybut dla wyszukiwania
+                    block_group.set("data-text", block["text"][:500])
+                    
+                    # Dodaj tytuł z pełnym tekstem (wyświetlany po najechaniu)
+                    ET.SubElement(block_group, "title").text = block["text"]
+                    
+                    # Dodaj niewidoczny tekst dla wyszukiwania
+                    hidden_text = ET.SubElement(block_group, "text", {
+                        "x": "0",
+                        "y": "0",
                         "opacity": "0",
                         "font-size": "1",
-                        "class": "block-text"
+                        "class": "searchable"
                     })
-                    block_text.text = block["text"][:200]  # Ogranicz długość
+                    hidden_text.text = block["text"]
                     
                     # Dodaj oryginalny tekst jako atrybut
                     block_group.set("data-text", block["text"][:500])
