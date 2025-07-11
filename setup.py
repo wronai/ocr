@@ -19,10 +19,11 @@ def read_requirements():
 # Get version from file
 def get_version():
     version_file = os.path.join("pdf_processor", "__version__.py")
+    version = {}
     if os.path.exists(version_file):
         with open(version_file, "r") as f:
-            exec(f.read())
-            return locals()["__version__"]
+            exec(f.read(), version)
+            return version.get("__version__", "2.0.0")
     return "2.0.0"
 
 setup(

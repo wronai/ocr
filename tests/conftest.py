@@ -23,8 +23,17 @@ def mock_processor_dirs(temp_dir):
     docs_dir = temp_dir / "documents"
     output_dir = temp_dir / "output"
 
-    docs_dir.mkdir()
-    output_dir.mkdir()
+    # Create directories if they don't exist
+    docs_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True)
+
+    # Clear any existing files in the directories
+    for file in docs_dir.glob("*"):
+        if file.is_file():
+            file.unlink()
+    for file in output_dir.glob("*"):
+        if file.is_file():
+            file.unlink()
 
     return {
         "documents": str(docs_dir),

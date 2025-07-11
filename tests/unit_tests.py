@@ -597,8 +597,6 @@ def assert_ocr_result_structure(result: dict):
     assert isinstance(result["language"], str)
     assert isinstance(result["blocks"], list)
 
----
-
 # tests/integration/test_end_to_end.py
 """
 Testy end-to-end dla PDF OCR Processor
