@@ -1,21 +1,52 @@
 # PDF OCR Processor - Python Dependencies
 
 # Core dependencies
-PyMuPDF>=1.23.0
-Pillow>=10.0.0
-requests>=2.31.0
-pyyaml>=6.0.1
-tqdm>=4.66.0
+PyMuPDF>=1.23.0  # PDF processing
+Pillow>=10.0.0  # Image processing
+requests>=2.31.0  # HTTP requests
+pyyaml>=6.0.1  # YAML configuration
+tqdm>=4.66.0  # Progress bars
+numpy>=1.24.0  # Numerical operations
+opencv-python>=4.8.0  # Image processing
+lxml>=4.9.0  # XML/HTML processing
+python-dotenv>=1.0.0  # Environment variable management
 
-# Optional but recommended
-numpy>=1.24.0
-opencv-python>=4.8.0
+# Data processing and utilities
+pandas>=2.0.0  # Data manipulation
+python-dateutil>=2.8.2  # Date parsing
+pytz>=2023.3  # Timezone support
 
-# Development dependencies (install with: pip install -r requirements-dev.txt)
-# pytest>=7.4.0
-# black>=23.0.0
-# flake8>=6.0.0
-# mypy>=1.5.0
-# pre-commit>=3.3.0
+# AI/ML dependencies
+torch>=2.0.0  # PyTorch for deep learning
+torchvision>=0.15.0  # Image datasets and models
+transformers>=4.30.0  # NLP models
+sentencepiece>=0.1.99  # Tokenization
 
+# CLI and logging
+click>=8.1.0  # Command line interface
+rich>=13.4.0  # Rich text and formatting
+loguru>=0.7.0  # Logging
 
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=7.4.0  # Testing framework
+# black>=23.0.0  # Code formatter
+# flake8>=6.0.0  # Linter
+# mypy>=1.5.0  # Static type checking
+# pre-commit>=3.3.0  # Git hooks
+# pytest-cov>=4.1.0  # Test coverage
+# sphinx>=7.0.0  # Documentation
+# sphinx-rtd-theme>=1.2.0  # ReadTheDocs theme
+
+# Optional dependencies (install with: pip install -e ".[gpu]")
+# cupy-cuda11x>=12.0.0  # GPU acceleration (replace x with your CUDA version)
+# nvidia-ml-py3>=7.352.0  # NVIDIA GPU monitoring
+
+# Web interface (install with: pip install -e ".[web]")
+# fastapi>=0.100.0  # Web framework
+# uvicorn>=0.23.0  # ASGI server
+# streamlit>=1.25.0  # Web app framework
+# python-multipart>=0.0.6  # File uploads
+# python-jose[cryptography]>=3.3.0  # JWT authentication
+
+# Note: Ollama should be installed separately as it's typically run as a service
+# See: https://ollama.ai/

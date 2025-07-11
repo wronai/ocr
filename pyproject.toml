@@ -4,20 +4,21 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdf_processor"
+name = "pdf-ocr-processor"
 version = "2.0.0"
 authors = [
   {name = "PDF OCR Processor Team", email = "team@pdf-ocr-processor.com"},
 ]
-description = "Advanced PDF OCR processing with AI-powered text extraction"
+description = "Advanced PDF OCR processing with AI-powered text extraction and selectable text overlays"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache-2.0 License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -27,26 +28,142 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Image Processing",
     "Topic :: Text Processing :: Markup",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
     "Topic :: Utilities",
 ]
-keywords = ["pdf", "ocr", "text-extraction", "ai", "ollama", "document-processing"]
+keywords = ["pdf", "ocr", "text-extraction", "ai", "ollama", "document-processing", "computer-vision"]
+
+# Main dependencies
 dependencies = [
-    "PyMuPDF>=1.23.0",
-    "Pillow>=10.0.0",
-    "requests>=2.31.0",
-    "pyyaml>=6.0.1",
-    "tqdm>=4.66.0",
+    # Core libraries
+    "PyMuPDF>=1.23.0",  # PDF processing
+    "Pillow>=10.0.0",  # Image processing
+    "requests>=2.31.0",  # HTTP requests
+    "pyyaml>=6.0.1",  # YAML configuration
+    "tqdm>=4.66.0",  # Progress bars
+    "numpy>=1.24.0",  # Numerical operations
+    "opencv-python>=4.8.0",  # Image processing
+    "lxml>=4.9.0",  # XML/HTML processing
+    "python-dotenv>=1.0.0",  # Environment variable management
+
+    # Data processing
+    "pandas>=2.0.0",  # Data manipulation
+    "python-dateutil>=2.8.2",  # Date parsing
+    "pytz>=2023.3",  # Timezone support
+
+    # CLI and logging
+    "click>=8.1.0",  # Command line interface
+    "rich>=13.4.0",  # Rich text and formatting
+    "loguru>=0.7.0",  # Logging
 ]
 
 [project.optional-dependencies]
+# Development tools
 dev = [
+    # Testing
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.3.0",
+
+    # Code quality
     "black>=23.0.0",
     "isort>=5.12.0",
     "flake8>=6.0.0",
     "mypy>=1.5.0",
     "pre-commit>=3.3.0",
+    "pylint>=2.17.0",
+    "mypy-extensions>=1.0.0",
+
+    # Documentation
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+    "myst-parser>=1.0.0",
+]
+
+# GPU acceleration
+gpu = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "transformers>=4.30.0",
+    "sentencepiece>=0.1.99",
+]
+
+# Web interface
+web = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "streamlit>=1.25.0",
+    "python-multipart>=0.0.6",
+    "python-jose[cryptography]>=3.3.0",
+]
+
+[project.scripts]
+pdf-ocr = "pdf_processor.cli:main"
+pdf-ocr-web = "pdf_processor.web:main"
+
+[project.urls]
+Homepage = "https://github.com/your-username/pdf-ocr-processor"
+Documentation = "https://pdf-ocr-processor.readthedocs.io/"
+Repository = "https://github.com/your-username/pdf-ocr-processor"
+Changelog = "https://github.com/your-username/pdf-ocr-processor/blob/main/CHANGELOG.md"
+Issues = "https://github.com/your-username/pdf-ocr-processor/issues"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+minversion = "7.4.0"
+addopts = "-v --cov=pdf_processor --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[coverage:run]
+source = ["pdf_processor"]
+omit = [
+    "**/__init__.py",
+    "**/version.py",
+    "**/tests/**",
+    "**/test_*.py",
+]
+
+[coverage:report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
 ]
 gpu = [
     "torch>=2.0.0",
