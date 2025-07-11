@@ -837,9 +837,14 @@ def main(config=None):
             - output_folder: Folder wyjściowy
             - model: Nazwa modelu OCR do użycia
             - workers: Liczba wątków roboczych
+            - non_interactive: Czy działać w trybie nieinterakcyjnym (bez pytań do użytkownika)
     """
     if config is None:
         config = {}
+    
+    # Ustaw tryb nieinteraktywny jeśli podano jakiekolwiek argumenty wiersza poleceń
+    if not config.get('non_interactive') and (config.get('input_path') or config.get('model') or config.get('workers')):
+        config['non_interactive'] = True
         
     print("🚀 PDF Multi-Page OCR Processor v2.0")
     print("=" * 50)
@@ -859,7 +864,7 @@ def main(config=None):
         print(f"  - Folder wyjściowy: {output_folder}")
         
         processor = PDFOCRProcessor(
-            documents_folder=str(documents_folder),
+            documents_folder=str(documents_folder.parent if documents_folder.is_file() else documents_folder),
             output_folder=str(output_folder)
         )
 
@@ -868,10 +873,13 @@ def main(config=None):
             processor.max_workers = int(config['workers'])
 
         # Sprawdź czy folder wejściowy istnieje
-        if not processor.documents_folder.exists():
-            print(f"\n📁 Tworzenie folderu: {processor.documents_folder}")
-            processor.documents_folder.mkdir(parents=True)
-            print(f"💡 Umieść pliki PDF w folderze: {processor.documents_folder}")
+        if not documents_folder.exists():
+            if config.get('non_interactive'):
+                print(f"\n❌ Błąd: Folder wejściowy nie istnieje: {documents_folder}")
+                return 1
+            print(f"\n📁 Tworzenie folderu: {documents_folder}")
+            documents_folder.mkdir(parents=True)
+            print(f"💡 Umieść pliki PDF w folderze: {documents_folder}")
             return 0
 
         # Sprawdź czy są pliki do przetworzenia
@@ -882,11 +890,12 @@ def main(config=None):
             processor.documents_folder = documents_folder.parent
         else:
             # W przeciwnym razie szukaj plików PDF w folderze
-            pdf_files = list(processor.documents_folder.glob("*.pdf"))
+            pdf_files = list(documents_folder.glob("*.pdf"))
             
         if not pdf_files:
-            print(f"\n📭 Brak plików PDF w folderze: {processor.documents_folder}")
-            print("💡 Umieść pliki PDF w tym folderze i uruchom ponownie")
+            print(f"\n📭 Brak plików PDF w folderze: {documents_folder}")
+            if not config.get('non_interactive'):
+                print("💡 Umieść pliki PDF w tym folderze i uruchom ponownie")
             return 0
 
         print(f"\n📄 Znalezione pliki PDF ({len(pdf_files)}):")
@@ -897,9 +906,14 @@ def main(config=None):
         # Wybór modelu OCR
         selected_model = config.get('model')
         if not selected_model:
-            selected_model = interactive_model_selection(processor)
-            if not selected_model:
-                return 1
+            if config.get('non_interactive'):
+                # W trybie nieinterakcyjnym używamy domyślnego modelu
+                selected_model = "llava:7b"
+                print(f"\n🔧 Używany model (domyślny): {selected_model}")
+            else:
+                selected_model = interactive_model_selection(processor)
+                if not selected_model:
+                    return 1
         else:
             # Sprawdź czy wybrany model jest dostępny
             available_models = processor.check_ollama_and_models()
@@ -914,17 +928,16 @@ def main(config=None):
 
         # Konfiguracja przetwarzania
         print("\n⚙️ Konfiguracja:")
-        if 'non_interactive' not in config:
+        use_parallel = True  # Domyślnie włączone
+        
+        if not config.get('non_interactive'):
             parallel_choice = input("Użyć przetwarzania równoległego? (T/n): ").strip().lower()
             use_parallel = parallel_choice != 'n'
-        else:
-            use_parallel = True  # Domyślnie włączone w trybie nieinteraktywnym
 
-        if use_parallel:
-            if 'non_interactive' not in config:
-                workers_input = input(f"Liczba workerów (domyślnie {processor.max_workers}): ").strip()
-                if workers_input.isdigit():
-                    processor.max_workers = int(workers_input)
+        if use_parallel and not config.get('non_interactive') and not config.get('workers'):
+            workers_input = input(f"Liczba workerów (domyślnie {processor.max_workers}): ").strip()
+            if workers_input.isdigit():
+                processor.max_workers = int(workers_input)
 
         print(f"  - Przetwarzanie równoległe: {'✅' if use_parallel else '❌'}")
         print(f"  - Liczba workerów: {processor.max_workers}")
