@@ -1,4 +1,3 @@
-
 # PDF OCR Processor - Development Makefile
 
 .PHONY: help install install-dev test lint format clean docker-build docker-run docs
@@ -21,10 +20,10 @@ help:
 
 # Installation
 install:
-	pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 install-dev:
-	pip install -r requirements-dev.txt
+	python3 -m pip install -r requirements-dev.txt
 	pre-commit install
 
 # Testing
@@ -87,11 +86,27 @@ dev-server:
 
 # Quick commands
 run:
-	python pdf_processor.py
+	@if [ ! -f .venv/bin/activate ]; then \
+		echo "❌ Virtual environment not found. Please run 'make setup' first."; \
+		exit 1; \
+	fi
+	@echo "🚀 Starting PDF OCR Processor..."
+	. .venv/bin/activate && python -m pdf_processor
 
 verify:
-	python test_runner.py --verify
+	python3 test_runner.py --verify
 
 models:
 	ollama pull llava:7b
 	ollama pull llama3.2-vision
+
+# Setup development environment
+setup:
+	@echo "Setting up development environment..."
+	python3 -m venv .venv || { echo "Failed to create virtual environment."; exit 1; }
+	. .venv/bin/activate && \
+	python -m pip install --upgrade pip && \
+	python -m pip install -e ".[dev]"
+	@echo "\n✅ Setup complete!"
+	@echo "To use the virtual environment, run: source .venv/bin/activate"
+	@echo "Then you can run: make run"
