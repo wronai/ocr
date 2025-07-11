@@ -4,7 +4,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdf-ocr-processor"
+name = "pdf_processor"
 version = "2.0.0"
 authors = [
   {name = "PDF OCR Processor Team", email = "team@pdf-ocr-processor.com"},
@@ -70,8 +70,9 @@ Repository = "https://github.com/your-repo/pdf-ocr-processor.git"
 Changelog = "https://github.com/your-repo/pdf-ocr-processor/blob/main/CHANGELOG.md"
 
 [project.scripts]
-pdf-ocr = "pdf_processor.cli:main"
-pdf-ocr-web = "pdf_processor.web:main"
+pdf_ocr = "pdf_processor:main"
+# Uncomment and implement when web interface is ready
+# pdf_ocr_web = "pdf_processor.web:main"
 
 # Black configuration
 [tool.black]

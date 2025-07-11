@@ -1,0 +1,80 @@
+name: Welcome New Contributors
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome New Issue Creator
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Check if this is the user's first issue
+            const creator = context.payload.sender.login;
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            
+            if (issues.data.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `
+                🎉 **Witaj w społeczności PDF OCR Processor!**
+                
+                Dziękujemy za pierwsze zgłoszenie! Oto kilka przydatnych linków:
+                
+                - 📚 [Dokumentacja](../README.md)
+                - 🚀 [Przewodnik szybkiego startu](../QUICK_START.md)
+                - 💡 [Przykłady użycia](../EXAMPLES.md)
+                - 🤝 [Przewodnik dla kontrybutorów](../CONTRIBUTING.md)
+                
+                Jeśli to twój pierwszy raz z OCR lub Ollama, sprawdź nasz FAQ! 
+                Maintainerzy odpowiedzą jak najszybciej. 🚀
+                `
+              });
+            }
+
+      - name: Welcome New PR Creator
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Check if this is the user's first PR
+            const creator = context.payload.sender.login;
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            
+            if (prs.data.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `
+                🎉 **Dziękujemy za pierwszy Pull Request!**
+                
+                To świetne że chcesz przyczynić się do rozwoju projektu! 
+                
+                **Następne kroki:**
+                - ✅ Sprawdź czy wszystkie testy przechodzą
+                - 📝 Upewnij się że dokumentacja jest aktualna
+                - 🔍 Poczekaj na code review od maintainerów
+                
+                Jeśli masz pytania, napisz komentarz! 🚀
+                `
+              });
+            }

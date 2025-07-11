@@ -1,0 +1,59 @@
+name: Auto Label Issues and PRs
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label Bug Reports
+        if: contains(github.event.issue.title, '[BUG]') || contains(github.event.issue.title, 'bug')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['bug', 'needs-triage']
+            })
+
+      - name: Label Feature Requests
+        if: contains(github.event.issue.title, '[FEATURE]') || contains(github.event.issue.title, 'feature')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['enhancement', 'needs-discussion']
+            })
+
+      - name: Label Documentation Issues
+        if: contains(github.event.issue.title, '[DOCS]') || contains(github.event.issue.title, 'documentation')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['documentation', 'good first issue']
+            })
+
+      - name: Label Questions
+        if: contains(github.event.issue.title, '[QUESTION]') || contains(github.event.issue.title, 'question')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['question', 'needs-response']
+            })

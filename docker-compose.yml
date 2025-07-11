@@ -1,0 +1,62 @@
+
+version: '3.8'
+
+services:
+  pdf-ocr-processor:
+    build: .
+    container_name: pdf-ocr-processor
+    volumes:
+      - ./documents:/app/documents
+      - ./output:/app/output
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      - OLLAMA_HOST=ollama:11434
+      - PDF_OCR_LOG_LEVEL=INFO
+    depends_on:
+      - ollama
+    networks:
+      - pdf-ocr-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
+    networks:
+      - pdf-ocr-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: pdf-ocr-web
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./documents:/app/documents
+      - ./output:/app/output
+    environment:
+      - PDF_OCR_API_URL=http://pdf-ocr-processor:8000
+    depends_on:
+      - pdf-ocr-processor
+    networks:
+      - pdf-ocr-network
+
+volumes:
+  ollama_data:
+
+networks:
+  pdf-ocr-network:
+    driver: bridge
