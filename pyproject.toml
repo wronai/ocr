@@ -108,12 +108,26 @@ Homepage = "https://github.com/your-username/pdf-ocr-processor"
 Documentation = "https://pdf-ocr-processor.readthedocs.io/"
 Repository = "https://github.com/your-username/pdf-ocr-processor"
 Changelog = "https://github.com/your-username/pdf-ocr-processor/blob/main/CHANGELOG.md"
-Issues = "https://github.com/your-username/pdf-ocr-processor/issues"
+"Bug Reports" = "https://github.com/your-username/pdf-ocr-processor/issues"
 
 [tool.black]
 line-length = 88
 target-version = ['py38']
 include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
 
 [tool.isort]
 profile = "black"
@@ -138,103 +152,6 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
-
-[tool.pytest.ini_options]
-minversion = "7.4.0"
-addopts = "-v --cov=pdf_processor --cov-report=term-missing"
-testpaths = ["tests"]
-python_files = "test_*.py"
-
-[coverage:run]
-source = ["pdf_processor"]
-omit = [
-    "**/__init__.py",
-    "**/version.py",
-    "**/tests/**",
-    "**/test_*.py",
-]
-
-[coverage:report]
-show_missing = true
-skip_covered = true
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "pass",
-    "raise ImportError",
-]
-gpu = [
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
-]
-web = [
-    "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
-    "streamlit>=1.25.0",
-]
-performance = [
-    "psutil>=5.9.0",
-    "memory-profiler>=0.61.0",
-]
-
-[project.urls]
-Homepage = "https://github.com/your-repo/pdf-ocr-processor"
-Documentation = "https://pdf-ocr-processor.readthedocs.io/"
-Repository = "https://github.com/your-repo/pdf-ocr-processor.git"
-"Bug Reports" = "https://github.com/your-repo/pdf-ocr-processor/issues"
-Changelog = "https://github.com/your-repo/pdf-ocr-processor/blob/main/CHANGELOG.md"
-
-[project.scripts]
-pdf_ocr = "pdf_processor:main"
-# Uncomment and implement when web interface is ready
-# pdf_ocr_web = "pdf_processor.web:main"
-
-# Black configuration
-[tool.black]
-line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
-
-# isort configuration
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-line_length = 88
-
-# MyPy configuration
-[tool.mypy]
-python_version = "3.8"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
@@ -245,8 +162,8 @@ module = [
 ]
 ignore_missing_imports = true
 
-# Pytest configuration
 [tool.pytest.ini_options]
+minversion = "7.4.0"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -256,6 +173,8 @@ addopts = [
     "--strict-config",
     "--verbose",
     "--tb=short",
+    "--cov=pdf_processor",
+    "--cov-report=term-missing"
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -269,7 +188,6 @@ filterwarnings = [
     "ignore::DeprecationWarning",
 ]
 
-# Coverage configuration
 [tool.coverage.run]
 source = ["pdf_processor"]
 omit = [
@@ -278,9 +196,13 @@ omit = [
     "*/__pycache__/*",
     "*/venv/*",
     "setup.py",
+    "**/__init__.py",
+    "**/version.py",
 ]
 
 [tool.coverage.report]
+show_missing = true
+skip_covered = true
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -290,14 +212,15 @@ exclude_lines = [
     "raise NotImplementedError",
     "if 0:",
     "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
+    "class .*\\b\\):",
     "@(abc\\.)?abstractmethod",
+    "pass",
+    "raise ImportError",
 ]
 
 [tool.coverage.html]
 directory = "htmlcov"
 
-# Bandit security configuration
 [tool.bandit]
 exclude_dirs = ["tests", "venv"]
 skips = ["B101", "B601"]
