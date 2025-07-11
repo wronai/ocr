@@ -1,0 +1,177 @@
+processing:
+  # Maksymalna liczba równoległych workerów dla OCR
+  max_workers: 4
+
+  # Timeout dla pojedynczej operacji OCR (sekundy)
+  timeout_seconds: 300
+
+  # Maksymalny rozmiar obrazu [szerokość, wysokość] w pikselach
+  # Większe obrazy będą przeskalowane dla wydajności
+  max_image_size: [2048, 2048]
+
+  # Domyślna rozdzielczość konwersji PDF→PNG (DPI)
+  default_dpi: 200
+
+  # Czy używać przetwarzania równoległego domyślnie
+  parallel_ocr_default: true
+
+  # Minimalna pewność OCR do uznania za poprawny wynik (0.0-1.0)
+  min_confidence_threshold: 0.3
+
+# Konfiguracja Ollama
+ollama:
+  # Host i port serwera Ollama
+  host: "localhost:11434"
+
+  # Lista preferowanych modeli OCR w kolejności priorytetów
+  preferred_models:
+    - "llama3.2-vision:11b"  # Najlepszy model dla jakości
+    - "llava:7b"             # Szybki i uniwersalny
+    - "llava:13b"            # Balans jakość/szybkość
+
+  # Timeout dla wywołań API Ollama (sekundy)
+  api_timeout: 60
+
+  # Liczba prób ponowienia w przypadku błędu
+  retry_attempts: 3
+
+  # Opóźnienie między próbami (sekundy)
+  retry_delay: 2
+
+# Ustawienia wyjścia i formatowania
+output:
+  # Czy tworzyć pliki SVG dla dokumentów wielostronicowych
+  create_svg: true
+
+  # Czy osadzać obrazy w SVG jako base64 (true) czy linkować (false)
+  embed_images: true
+
+  # Czy generować debug rectangles w SVG (dla rozwoju)
+  include_debug_rectangles: false
+
+  # Czy automatycznie usuwać pliki tymczasowe po przetworzeniu
+  cleanup_temp_files: true
+
+  # Format nazewnictwa plików wyjściowych
+  filename_format: "{basename}_{timestamp}"
+
+  # Kompresja obrazów PNG (0-9, 9=maksymalna)
+  png_compression: 6
+
+# Konfiguracja logowania
+logging:
+  # Poziom logowania: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # Ścieżka do pliku logów (względna lub bezwzględna)
+  log_file: "logs/pdf_ocr.log"
+
+  # Maksymalny rozmiar pliku logu (MB)
+  max_file_size: 10
+
+  # Liczba kopii zapasowych logów
+  backup_count: 5
+
+  # Format wiadomości logów
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Format daty w logach
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# Ścieżki folderów
+paths:
+  # Folder z dokumentami do przetworzenia
+  documents_folder: "documents"
+
+  # Folder na pliki wyjściowe
+  output_folder: "output"
+
+  # Folder na pliki tymczasowe
+  temp_folder: "temp"
+
+  # Folder na cache'owane wyniki
+  cache_folder: "cache"
+
+# Optymalizacje wydajności
+performance:
+  # Czy używać cache dla już przetworzonych plików
+  enable_caching: true
+
+  # Czas życia cache (dni)
+  cache_ttl_days: 30
+
+  # Maksymalny rozmiar cache (MB)
+  max_cache_size: 1000
+
+  # Czy monitorować użycie pamięci
+  monitor_memory: true
+
+  # Limit pamięci per worker (MB, 0=brak limitu)
+  memory_limit_per_worker: 512
+
+# Ustawienia eksperymentalne (używaj ostrożnie)
+experimental:
+  # Czy włączyć eksperymentalne funkcje
+  enabled: false
+
+  # GPU acceleration (wymaga odpowiedniego setup)
+  gpu_acceleration: false
+
+  # Advanced text analysis po OCR
+  text_analysis: false
+
+  # Automatyczna korekcja błędów OCR
+  auto_correction: false
+
+# Integracje zewnętrzne
+integrations:
+  # Webhook do powiadomień
+  webhook:
+    enabled: false
+    url: ""
+    timeout: 10
+
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: ""
+
+  # Discord notifications
+  discord:
+    enabled: false
+    webhook_url: ""
+
+  # Database integration
+  database:
+    enabled: false
+    type: "sqlite"  # sqlite, postgresql, mysql
+    connection_string: "sqlite:///ocr_results.db"
+
+# Profile wydajności (można przełączać)
+profiles:
+  # Profil szybkiego przetwarzania
+  fast:
+    processing:
+      max_workers: 8
+      default_dpi: 150
+      max_image_size: [1536, 1536]
+    ollama:
+      preferred_models: ["llava:7b"]
+
+  # Profil wysokiej jakości
+  quality:
+    processing:
+      max_workers: 2
+      default_dpi: 300
+      max_image_size: [2560, 2560]
+    ollama:
+      preferred_models: ["llama3.2-vision:11b"]
+
+  # Profil zbalansowany (domyślny)
+  balanced:
+    processing:
+      max_workers: 4
+      default_dpi: 200
+      max_image_size: [2048, 2048]
+    ollama:
+      preferred_models: ["llava:7b", "llama3.2-vision:11b"]
