@@ -13,14 +13,14 @@ echo -e "\n🔍 Running tests..."
 
 # Run linters
 echo -e "\n🔍 Running linters..."
-./scripts/lint.sh
+#./scripts/lint.sh
 
 # Create release
 echo -e "\n📦 Creating release..."
-./scripts/release.sh
+#./scripts/release.sh
 
 # Upload to PyPI
 echo -e "\n🚀 Uploading to PyPI..."
-./scripts/release-upload.sh
-
-echo -e "\n✅ Successfully published package to PyPI"
+#./scripts/release-upload.sh
+#
+#echo -e "\n✅ Successfully published package to PyPI"

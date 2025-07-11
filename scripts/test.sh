@@ -1,5 +1,10 @@
 #!/bin/bash
 # Run tests
 
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
 echo "🚀 Running tests..."
-python3 -m pytest tests/ -v
+python -m pytest tests/ -v

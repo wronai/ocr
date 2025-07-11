@@ -146,10 +146,10 @@ startxref
         
         # Mock the _process_page method
         with patch.object(mock_processor, '_process_page') as mock_process_page:
+            from pdf_processor.models.ocr_result import TextBlock
             mock_process_page.return_value = {
                 "text": "test text",
-                "blocks": [{"text": "test", "bbox": [0, 0, 100, 100]}],
-                "success": True,
+                "blocks": [TextBlock(text="test", x=0, y=0, width=100, height=100, confidence=0.9)],
                 "output_files": []
             }
             

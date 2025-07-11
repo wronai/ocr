@@ -1,4 +1,4 @@
-""
+"""
 Base SVG generator module providing core functionality for SVG generation.
 """
 from dataclasses import dataclass, field

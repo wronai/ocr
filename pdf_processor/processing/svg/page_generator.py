@@ -1,4 +1,4 @@
-""
+"""
 Module for generating single-page SVG documents from OCR results.
 """
 from typing import Dict, List, Optional, Tuple, Union, Any
@@ -7,7 +7,7 @@ from xml.etree import ElementTree as ET
 import logging
 
 from .base_generator import SVGGenerator, SVGConfig
-from ..models.ocr_result import OCRResult, TextBlock
+from pdf_processor.models.ocr_result import OCRResult, TextBlock
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def _create_svg_page(self, image_path: Union[str, Path], ocr_result: OCRResult) 
         
     Returns:
         The root SVG element.
-    ""
+    """
     # Get image dimensions
     img_width, img_height = self._get_image_size(image_path)
     

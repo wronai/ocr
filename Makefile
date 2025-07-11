@@ -80,6 +80,9 @@ release-upload:
 # Publish package to PyPI
 publish:
 	./scripts/publish.sh
+	poetry version patch
+	poetry build
+	poetry publish
 
 # Development
 dev-setup:

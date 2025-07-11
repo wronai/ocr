@@ -26,7 +26,7 @@ from ..utils.logging_utils import setup_logger, log_execution_time
 from ..utils.validation_utils import validate_positive_number, validate_pdf_file
 from .image_enhancement import ImageEnhancer, EnhancementStrategy
 from .ocr_processor import OCRProcessor
-from .svg_generator import SVGGenerator, SVGConfig
+from .svg.base_generator import SVGGenerator, SVGConfig
 
 
 @dataclass
