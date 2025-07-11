@@ -1,0 +1,515 @@
+# LICENSE
+
+MIT License
+
+Copyright (c) 2025 PDF OCR Processor Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+# .github/ISSUE_TEMPLATE/bug_report.md
+
+---
+name: 🐛 Bug Report
+about: Zgłoś błąd w PDF OCR Processor
+title: '[BUG] '
+labels: 'bug'
+assignees: ''
+
+---
+
+## 🐛 Opis błędu
+<!-- Jasny i zwięzły opis problemu -->
+
+## 🔄 Kroki do odtworzenia
+<!-- Dokładne kroki prowadzące do błędu -->
+1. Przejdź do '...'
+2. Uruchom komendę '...'
+3. Użyj pliku '...'
+4. Zobacz błąd
+
+## ✅ Oczekiwane zachowanie
+<!-- Opis tego co powinno się stać -->
+
+## ❌ Rzeczywiste zachowanie
+<!-- Opis tego co się dzieje zamiast tego -->
+
+## 🖼️ Screenshots/Logi
+<!-- Jeśli dotyczy, wklej logi błędów lub screenshots -->
+```
+Wklej tutaj logi błędów
+```
+
+## 🖥️ Środowisko
+<!-- Wypełnij informacje o swoim systemie -->
+- **OS**: [np. Ubuntu 20.04, macOS 12.0, Windows 10]
+- **Python**: [np. 3.9.7] (`python --version`)
+- **PDF OCR Processor**: [np. 2.0.0]
+- **Ollama**: [np. 0.1.17] (`ollama --version`)
+- **PyMuPDF**: [np. 1.23.0] (`pip show PyMuPDF`)
+- **Pillow**: [np. 10.0.0] (`pip show Pillow`)
+
+## 📄 Przykładowy plik
+<!-- Jeśli możliwe, załącz problematyczny PDF -->
+- [ ] Załączam przykładowy plik PDF (upewnij się że nie zawiera wrażliwych danych)
+- [ ] Problem występuje z każdym plikiem PDF
+- [ ] Problem występuje tylko z konkretnymi plikami
+
+## 🔍 Dodatkowe informacje
+<!-- Wypełnij wyniki poniższych komend -->
+
+**Weryfikacja instalacji:**
+```bash
+python verify_installation.py
+```
+
+**Status Ollama:**
+```bash
+ollama list
+ollama ps
+```
+
+**Struktura projektu:**
+```bash
+ls -la documents/ output/
+```
+
+## 📝 Próby rozwiązania
+<!-- Co już próbowałeś aby rozwiązać problem? -->
+- [ ] Sprawdziłem FAQ w QUICK_START.md
+- [ ] Uruchomiłem ponownie Ollama (`systemctl restart ollama`)
+- [ ] Reinstalowałem pakiety Python (`pip install -r requirements.txt --force-reinstall`)
+- [ ] Sprawdziłem czy mam najnowszą wersję
+
+## 🚨 Priorytet
+- [ ] Low - nie blokuje pracy
+- [ ] Medium - utrudnia pracę  
+- [ ] High - blokuje użytkowanie
+- [ ] Critical - powoduje utratę danych
+
+## 📞 Kontakt
+<!-- Opcjonalnie - czy możemy skontaktować się w sprawie dodatkowych informacji? -->
+- [ ] Tak, możecie skontaktować się ze mną w sprawie tego błędu
+- [ ] Chcę być powiadomiony o postępach w naprawie
+
+---
+
+# .github/ISSUE_TEMPLATE/feature_request.md
+
+---
+name: 🚀 Feature Request
+about: Zaproponuj nową funkcję dla PDF OCR Processor
+title: '[FEATURE] '
+labels: 'enhancement'
+assignees: ''
+
+---
+
+## 🚀 Opis funkcji
+<!-- Jasny opis żądanej funkcjonalności -->
+
+## ❓ Problem do rozwiązania
+<!-- Jaki problem ta funkcja rozwiązuje? -->
+**Obecnie:** Opisz aktualne ograniczenie/problem
+**Chciałbym:** Opisz żądane zachowanie
+
+## 💡 Proponowane rozwiązanie
+<!-- Jak widzisz implementację tej funkcji? -->
+
+## 🔄 Alternatywy
+<!-- Czy rozważałeś inne sposoby rozwiązania tego problemu? -->
+
+## 📈 Use case / Przykład użycia
+<!-- Konkretny scenariusz kiedy ta funkcja byłaby przydatna -->
+```python
+# Przykład jak mogłoby to działać
+processor = PDFOCRProcessor()
+result = processor.new_feature(parameters)
+```
+
+## 🎯 Kategoria funkcji
+- [ ] OCR improvements (lepsze rozpoznawanie tekstu)
+- [ ] Performance (wydajność, szybkość)
+- [ ] User Interface (łatwość użycia)
+- [ ] Integration (integracja z innymi narzędziami)
+- [ ] Output formats (nowe formaty wyjściowe)
+- [ ] Automation (automatyzacja procesów)
+- [ ] Analytics (analiza wyników)
+- [ ] Configuration (konfiguracja)
+
+## 📊 Wpływ na użytkowników
+<!-- Kto skorzysta z tej funkcji? -->
+- [ ] Wszyscy użytkownicy
+- [ ] Użytkownicy zaawansowani
+- [ ] Użytkownicy enterprise
+- [ ] Developerzy integrujący API
+- [ ] Administratorzy systemów
+
+## 🎯 Priorytet
+- [ ] Nice to have (miło by było)
+- [ ] Important (ważne dla produktywności)
+- [ ] Critical (kluczowe dla niektórych use case'ów)
+
+## 🔧 Gotowość do implementacji
+- [ ] Chciałbym pomóc w implementacji
+- [ ] Mogę pomóc w testowaniu
+- [ ] Mogę napisać dokumentację
+- [ ] Tylko zgłaszam pomysł
+
+## 🌍 Podobne rozwiązania
+<!-- Czy znasz podobne funkcje w innych narzędziach? -->
+- Narzędzie X ma funkcję Y która...
+- Link do dokumentacji: ...
+
+## 📝 Dodatkowy kontekst
+<!-- Screenshots, mockupy, linki, dodatkowe informacje -->
+
+## 📞 Dyskusja
+<!-- Czy chcesz przedyskutować tę funkcję przed implementacją? -->
+- [ ] Tak, otwórzcie GitHub Discussion
+- [ ] Nie, wszystko jest jasne w tym opisie
+
+---
+
+# .github/ISSUE_TEMPLATE/documentation.md
+
+---
+name: 📚 Documentation Issue
+about: Zgłoś problem z dokumentacją lub zaproponuj ulepszenia
+title: '[DOCS] '
+labels: 'documentation'
+assignees: ''
+
+---
+
+## 📚 Typ problemu z dokumentacją
+- [ ] Błąd w dokumentacji (niepoprawne informacje)
+- [ ] Brakujące informacje
+- [ ] Niejasne instrukcje
+- [ ] Przykłady nie działają
+- [ ] Prośba o nową dokumentację
+- [ ] Usprawnienie istniejącej dokumentacji
+
+## 📍 Lokalizacja
+<!-- Gdzie znajduje się problem? -->
+- **Plik**: (np. README.md, EXAMPLES.md, docstring w pdf_processor.py)
+- **Sekcja**: (np. "Instalacja", "API Reference")  
+- **Linia/Fragment**: (jeśli dotyczy)
+
+## ❌ Aktualny problem
+<!-- Opisz co jest nie tak z aktualną dokumentacją -->
+
+## ✅ Proponowane rozwiązanie
+<!-- Jak powinna wyglądać poprawiona dokumentacja? -->
+
+## 📝 Dodatkowe informacje
+<!-- Czy masz przykłady, linki, czy inne materiały które mogą pomóc? -->
+
+## 🎯 Odbiorcy
+<!-- Kto skorzysta z tej poprawki? -->
+- [ ] Nowi użytkownicy
+- [ ] Doświadczeni użytkownicy  
+- [ ] Developerzy
+- [ ] Administratorzy
+
+## 🔧 Gotowość do pomocy
+- [ ] Mogę napisać poprawkę
+- [ ] Mogę zweryfikować poprawkę
+- [ ] Tylko zgłaszam problem
+
+---
+
+# .github/ISSUE_TEMPLATE/question.md
+
+---
+name: ❓ Question
+about: Zadaj pytanie o PDF OCR Processor
+title: '[QUESTION] '
+labels: 'question'
+assignees: ''
+
+---
+
+## ❓ Pytanie
+<!-- Zadaj swoje pytanie jasno i zwięźle -->
+
+## 🔍 Co już sprawdziłem
+- [ ] Przeczytałem README.md
+- [ ] Sprawdziłem QUICK_START.md i FAQ
+- [ ] Przejrzałem EXAMPLES.md
+- [ ] Szukałem w istniejących Issues
+- [ ] Sprawdziłem GitHub Discussions
+
+## 🖥️ Środowisko (jeśli dotyczy)
+- **OS**: 
+- **Python**: 
+- **PDF OCR Processor**: 
+
+## 📝 Dodatkowy kontekst
+<!-- Dodaj przykłady, kod, screenshots - wszystko co pomoże zrozumieć pytanie -->
+
+---
+
+# .github/pull_request_template.md
+
+## 📋 Opis zmian
+<!-- Krótki opis co zostało zmienione i dlaczego -->
+
+## 🔗 Powiązane Issues
+<!-- Użyj "Closes #123" lub "Related to #456" -->
+
+## 🧪 Typ zmian
+- [ ] 🐛 Bug fix (non-breaking change)
+- [ ] ✨ New feature (non-breaking change)
+- [ ] 💥 Breaking change (existing functionality affected)
+- [ ] 📚 Documentation update
+- [ ] ⚡ Performance improvement
+- [ ] ♻️ Code refactoring
+- [ ] 🔧 Chore (dependencies, build, etc.)
+
+## ✅ Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests passed
+- [ ] Manual testing completed
+- [ ] Performance impact assessed
+- [ ] `make test` passes
+- [ ] `make lint` passes
+
+## 📝 Screenshots/Output
+<!-- Jeśli dotyczy, dodaj screenshots, logi, lub przykłady output -->
+
+## 📚 Documentation
+- [ ] Code comments updated
+- [ ] README updated if needed
+- [ ] Examples added/updated
+- [ ] Docstrings added/updated
+- [ ] CHANGELOG.md updated (if significant change)
+
+## ⚠️ Breaking Changes
+<!-- Opisz breaking changes jeśli występują -->
+<!-- Lista zmian które mogą wpłynąć na istniejący kod -->
+
+## 📋 Checklist
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review of my own code
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published
+
+## 🔍 Review Notes
+<!-- Dodatkowe informacje dla reviewers -->
+<!-- Na co reviewer powinien zwrócić szczególną uwagę? -->
+
+---
+
+# .github/CONTRIBUTING.md
+
+<!-- Krótka wersja - link do pełnej dokumentacji -->
+
+# 🤝 Contributing to PDF OCR Processor
+
+Thank you for your interest in contributing! 
+
+## Quick Start
+
+1. **Read the full guide**: [CONTRIBUTING.md](../CONTRIBUTING.md)
+2. **Fork** the repository
+3. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+4. **Commit** your changes: `git commit -m 'feat: add amazing feature'`
+5. **Push** to the branch: `git push origin feature/amazing-feature`
+6. **Open** a Pull Request
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant](https://www.contributor-covenant.org/) Code of Conduct.
+
+## Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/pdf-ocr-processor.git
+cd pdf-ocr-processor
+
+# Install development dependencies
+make dev-setup
+
+# Run tests
+make test
+```
+
+## Before Submitting
+
+- [ ] Tests pass: `make test`
+- [ ] Code is formatted: `make format`
+- [ ] Linting passes: `make lint`
+- [ ] Documentation updated if needed
+
+For detailed information, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+---
+
+# .github/workflows/auto-label.yml
+
+name: Auto Label Issues and PRs
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label Bug Reports
+        if: contains(github.event.issue.title, '[BUG]') || contains(github.event.issue.title, 'bug')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['bug', 'needs-triage']
+            })
+
+      - name: Label Feature Requests  
+        if: contains(github.event.issue.title, '[FEATURE]') || contains(github.event.issue.title, 'feature')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['enhancement', 'needs-discussion']
+            })
+
+      - name: Label Documentation Issues
+        if: contains(github.event.issue.title, '[DOCS]') || contains(github.event.issue.title, 'documentation')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['documentation', 'good first issue']
+            })
+
+      - name: Label Questions
+        if: contains(github.event.issue.title, '[QUESTION]') || contains(github.event.issue.title, 'question')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['question', 'needs-response']
+            })
+
+---
+
+# .github/workflows/welcome.yml
+
+name: Welcome New Contributors
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome New Issue Creator
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Check if this is the user's first issue
+            const creator = context.payload.sender.login;
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            
+            if (issues.data.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `
+                🎉 **Witaj w społeczności PDF OCR Processor!**
+                
+                Dziękujemy za pierwsze zgłoszenie! Oto kilka przydatnych linków:
+                
+                - 📚 [Dokumentacja](../README.md)
+                - 🚀 [Przewodnik szybkiego startu](../QUICK_START.md)
+                - 💡 [Przykłady użycia](../EXAMPLES.md)
+                - 🤝 [Przewodnik dla kontrybutorów](../CONTRIBUTING.md)
+                
+                Jeśli to twój pierwszy raz z OCR lub Ollama, sprawdź nasz FAQ! 
+                Maintainerzy odpowiedzą jak najszybciej. 🚀
+                `
+              });
+            }
+
+      - name: Welcome New PR Creator
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6  
+        with:
+          script: |
+            // Check if this is the user's first PR
+            const creator = context.payload.sender.login;
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            
+            if (prs.data.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `
+                🎉 **Dziękujemy za pierwszy Pull Request!**
+                
+                To świetne że chcesz przyczynić się do rozwoju projektu! 
+                
+                **Następne kroki:**
+                - ✅ Sprawdź czy wszystkie testy przechodzą
+                - 📝 Upewnij się że dokumentacja jest aktualna
+                - 🔍 Poczekaj na code review od maintainerów
+                
+                Jeśli masz pytania, napisz komentarz! 🚀
+                `
+              });
+            }

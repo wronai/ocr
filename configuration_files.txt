@@ -1,0 +1,683 @@
+# config/config.yaml.example
+# PDF OCR Processor - Przykładowa konfiguracja
+# Skopiuj do config/config.yaml i dostosuj do swoich potrzeb
+
+# Podstawowe ustawienia przetwarzania
+processing:
+  # Maksymalna liczba równoległych workerów dla OCR
+  max_workers: 4
+  
+  # Timeout dla pojedynczej operacji OCR (sekundy)
+  timeout_seconds: 300
+  
+  # Maksymalny rozmiar obrazu [szerokość, wysokość] w pikselach
+  # Większe obrazy będą przeskalowane dla wydajności
+  max_image_size: [2048, 2048]
+  
+  # Domyślna rozdzielczość konwersji PDF→PNG (DPI)
+  default_dpi: 200
+  
+  # Czy używać przetwarzania równoległego domyślnie
+  parallel_ocr_default: true
+  
+  # Minimalna pewność OCR do uznania za poprawny wynik (0.0-1.0)
+  min_confidence_threshold: 0.3
+
+# Konfiguracja Ollama
+ollama:
+  # Host i port serwera Ollama
+  host: "localhost:11434"
+  
+  # Lista preferowanych modeli OCR w kolejności priorytetów
+  preferred_models:
+    - "llama3.2-vision:11b"  # Najlepszy model dla jakości
+    - "llava:7b"             # Szybki i uniwersalny
+    - "llava:13b"            # Balans jakość/szybkość
+  
+  # Timeout dla wywołań API Ollama (sekundy)
+  api_timeout: 60
+  
+  # Liczba prób ponowienia w przypadku błędu
+  retry_attempts: 3
+  
+  # Opóźnienie między próbami (sekundy)
+  retry_delay: 2
+
+# Ustawienia wyjścia i formatowania
+output:
+  # Czy tworzyć pliki SVG dla dokumentów wielostronicowych
+  create_svg: true
+  
+  # Czy osadzać obrazy w SVG jako base64 (true) czy linkować (false)
+  embed_images: true
+  
+  # Czy generować debug rectangles w SVG (dla rozwoju)
+  include_debug_rectangles: false
+  
+  # Czy automatycznie usuwać pliki tymczasowe po przetworzeniu
+  cleanup_temp_files: true
+  
+  # Format nazewnictwa plików wyjściowych
+  filename_format: "{basename}_{timestamp}"
+  
+  # Kompresja obrazów PNG (0-9, 9=maksymalna)
+  png_compression: 6
+
+# Konfiguracja logowania
+logging:
+  # Poziom logowania: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Ścieżka do pliku logów (względna lub bezwzględna)
+  log_file: "logs/pdf_ocr.log"
+  
+  # Maksymalny rozmiar pliku logu (MB)
+  max_file_size: 10
+  
+  # Liczba kopii zapasowych logów
+  backup_count: 5
+  
+  # Format wiadomości logów
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Format daty w logach
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# Ścieżki folderów
+paths:
+  # Folder z dokumentami do przetworzenia
+  documents_folder: "documents"
+  
+  # Folder na pliki wyjściowe
+  output_folder: "output"
+  
+  # Folder na pliki tymczasowe
+  temp_folder: "temp"
+  
+  # Folder na cache'owane wyniki
+  cache_folder: "cache"
+
+# Optymalizacje wydajności
+performance:
+  # Czy używać cache dla już przetworzonych plików
+  enable_caching: true
+  
+  # Czas życia cache (dni)
+  cache_ttl_days: 30
+  
+  # Maksymalny rozmiar cache (MB)
+  max_cache_size: 1000
+  
+  # Czy monitorować użycie pamięci
+  monitor_memory: true
+  
+  # Limit pamięci per worker (MB, 0=brak limitu)
+  memory_limit_per_worker: 512
+
+# Ustawienia eksperymentalne (używaj ostrożnie)
+experimental:
+  # Czy włączyć eksperymentalne funkcje
+  enabled: false
+  
+  # GPU acceleration (wymaga odpowiedniego setup)
+  gpu_acceleration: false
+  
+  # Advanced text analysis po OCR
+  text_analysis: false
+  
+  # Automatyczna korekcja błędów OCR
+  auto_correction: false
+
+# Integracje zewnętrzne
+integrations:
+  # Webhook do powiadomień
+  webhook:
+    enabled: false
+    url: ""
+    timeout: 10
+  
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: ""
+  
+  # Discord notifications  
+  discord:
+    enabled: false
+    webhook_url: ""
+  
+  # Database integration
+  database:
+    enabled: false
+    type: "sqlite"  # sqlite, postgresql, mysql
+    connection_string: "sqlite:///ocr_results.db"
+
+# Profile wydajności (można przełączać)
+profiles:
+  # Profil szybkiego przetwarzania
+  fast:
+    processing:
+      max_workers: 8
+      default_dpi: 150
+      max_image_size: [1536, 1536]
+    ollama:
+      preferred_models: ["llava:7b"]
+  
+  # Profil wysokiej jakości
+  quality:
+    processing:
+      max_workers: 2
+      default_dpi: 300
+      max_image_size: [2560, 2560]
+    ollama:
+      preferred_models: ["llama3.2-vision:11b"]
+  
+  # Profil zbalansowany (domyślny)
+  balanced:
+    processing:
+      max_workers: 4
+      default_dpi: 200
+      max_image_size: [2048, 2048]
+    ollama:
+      preferred_models: ["llava:7b", "llama3.2-vision:11b"]
+
+---
+
+# .env.example
+# PDF OCR Processor - Zmienne środowiskowe
+# Skopiuj do .env i ustaw swoje wartości
+
+# === OLLAMA CONFIGURATION ===
+OLLAMA_HOST=localhost:11434
+OLLAMA_MODELS_PATH=/usr/share/ollama/.ollama/models
+OLLAMA_API_TIMEOUT=60
+
+# === PDF OCR PROCESSOR SETTINGS ===
+PDF_OCR_MAX_WORKERS=4
+PDF_OCR_TIMEOUT=300
+PDF_OCR_MAX_IMAGE_SIZE=2048
+PDF_OCR_DPI=200
+PDF_OCR_LOG_LEVEL=INFO
+
+# === PATHS ===
+PDF_OCR_DOCUMENTS_FOLDER=documents
+PDF_OCR_OUTPUT_FOLDER=output
+PDF_OCR_CONFIG_FILE=config/config.yaml
+PDF_OCR_LOG_FILE=logs/pdf_ocr.log
+
+# === PERFORMANCE ===
+PDF_OCR_ENABLE_CACHE=true
+PDF_OCR_CACHE_TTL_DAYS=30
+PDF_OCR_MEMORY_LIMIT=512
+
+# === WEB UI (jeśli używane) ===
+PDF_OCR_WEB_HOST=0.0.0.0
+PDF_OCR_WEB_PORT=8501
+PDF_OCR_API_HOST=0.0.0.0
+PDF_OCR_API_PORT=8000
+
+# === INTEGRATIONS ===
+# Slack webhook (opcjonalne)
+SLACK_WEBHOOK_URL=
+
+# Discord webhook (opcjonalne)  
+DISCORD_WEBHOOK_URL=
+
+# Database (opcjonalne)
+DATABASE_URL=sqlite:///ocr_results.db
+
+# === DEVELOPMENT ===
+PDF_OCR_DEBUG=false
+PDF_OCR_PROFILE=false
+PDF_OCR_EXPERIMENTAL=false
+
+# === SECURITY (production) ===
+SECRET_KEY=your-secret-key-here
+API_KEY=your-api-key-here
+
+---
+
+# .editorconfig
+# EditorConfig - spójne formatowanie dla wszystkich edytorów
+# https://editorconfig.org/
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+[*.{js,ts}]
+indent_size = 2
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[*.{bat,cmd}]
+end_of_line = crlf
+
+---
+
+# .pre-commit-config.yaml
+# Pre-commit hooks konfiguracja
+# Instalacja: pre-commit install
+
+repos:
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black]
+
+  # Flake8 linting  
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: [--max-line-length=88, --extend-ignore=E203,W503]
+
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-docstring-first
+      - id: debug-statements
+
+  # Security check
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-PyYAML]
+
+---
+
+# pyproject.toml
+# Python project configuration
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-ocr-processor"
+version = "2.0.0"
+authors = [
+  {name = "PDF OCR Processor Team", email = "team@pdf-ocr-processor.com"},
+]
+description = "Advanced PDF OCR processing with AI-powered text extraction"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop", 
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Utilities",
+]
+keywords = ["pdf", "ocr", "text-extraction", "ai", "ollama", "document-processing"]
+dependencies = [
+    "PyMuPDF>=1.23.0",
+    "Pillow>=10.0.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0.1",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+]
+gpu = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+]
+web = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "streamlit>=1.25.0",
+]
+performance = [
+    "psutil>=5.9.0",
+    "memory-profiler>=0.61.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-repo/pdf-ocr-processor"
+Documentation = "https://pdf-ocr-processor.readthedocs.io/"
+Repository = "https://github.com/your-repo/pdf-ocr-processor.git"
+"Bug Reports" = "https://github.com/your-repo/pdf-ocr-processor/issues"
+Changelog = "https://github.com/your-repo/pdf-ocr-processor/blob/main/CHANGELOG.md"
+
+[project.scripts]
+pdf-ocr = "pdf_processor.cli:main"
+pdf-ocr-web = "pdf_processor.web:main"
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "fitz.*",
+    "PIL.*",
+    "tqdm.*",
+]
+ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests as requiring GPU",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["pdf_processor"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# Bandit security configuration
+[tool.bandit]
+exclude_dirs = ["tests", "venv"]
+skips = ["B101", "B601"]
+
+---
+
+# pdf_processor/__init__.py
+"""
+PDF OCR Processor - Advanced PDF text extraction with AI
+
+This package provides powerful OCR capabilities for PDF documents
+using Ollama AI models with automatic SVG generation and metadata.
+"""
+
+from .core import PDFOCRProcessor
+from .utils import logger, setup_logging
+from .__version__ import __version__
+
+__all__ = [
+    "PDFOCRProcessor",
+    "logger", 
+    "setup_logging",
+    "__version__",
+]
+
+# Package metadata
+__author__ = "PDF OCR Processor Team"
+__email__ = "team@pdf-ocr-processor.com"
+__license__ = "MIT"
+__copyright__ = "Copyright 2025 PDF OCR Processor Contributors"
+
+---
+
+# pdf_processor/__version__.py
+"""Version information for PDF OCR Processor."""
+
+__version__ = "2.0.0"
+__version_info__ = (2, 0, 0)
+
+# Version history
+CHANGELOG = {
+    "2.0.0": "Complete rewrite with parallel processing, better error handling, and SVG generation",
+    "1.0.0": "Initial release with basic PDF OCR functionality", 
+    "0.9.0": "Proof of concept and Ollama integration",
+}
+
+---
+
+# tests/conftest.py
+"""
+Pytest configuration and shared fixtures
+"""
+
+import pytest
+import tempfile
+import shutil
+from pathlib import Path
+from unittest.mock import Mock
+import os
+
+@pytest.fixture(scope="session")
+def temp_dir():
+    """Session-scoped temporary directory"""
+    tmp_dir = tempfile.mkdtemp()
+    yield Path(tmp_dir)
+    shutil.rmtree(tmp_dir)
+
+@pytest.fixture
+def mock_processor_dirs(temp_dir):
+    """Mock directories for processor testing"""
+    docs_dir = temp_dir / "documents"
+    output_dir = temp_dir / "output"
+    
+    docs_dir.mkdir()
+    output_dir.mkdir()
+    
+    return {
+        "documents": str(docs_dir),
+        "output": str(output_dir)
+    }
+
+@pytest.fixture
+def sample_pdf_content():
+    """Sample PDF content for testing"""
+    return b"""%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj  
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj
+xref
+0 4
+0000000000 65535 f 
+0000000010 00000 n 
+0000000053 00000 n 
+0000000100 00000 n 
+trailer<</Size 4/Root 1 0 R>>
+startxref
+169
+%%EOF"""
+
+@pytest.fixture
+def sample_pdf_file(temp_dir, sample_pdf_content):
+    """Create a sample PDF file for testing"""
+    pdf_file = temp_dir / "sample.pdf"
+    pdf_file.write_bytes(sample_pdf_content)
+    return str(pdf_file)
+
+@pytest.fixture
+def mock_ollama_response():
+    """Mock successful Ollama response"""
+    return {
+        "text": "Sample extracted text from PDF",
+        "confidence": 0.95,
+        "language": "en",
+        "blocks": [
+            {
+                "text": "Sample text block",
+                "bbox": [10, 20, 100, 30],
+                "confidence": 0.95
+            }
+        ]
+    }
+
+@pytest.fixture  
+def mock_failed_ollama_response():
+    """Mock failed Ollama response"""
+    return {
+        "text": "",
+        "confidence": 0.0,
+        "language": "unknown",
+        "blocks": [],
+        "error": "OCR failed"
+    }
+
+# Skip markers for conditional testing
+def pytest_configure(config):
+    """Configure pytest markers"""
+    config.addinivalue_line(
+        "markers", "slow: mark test as slow running"
+    )
+    config.addinivalue_line(
+        "markers", "gpu: mark test as requiring GPU"
+    )
+    config.addinivalue_line(
+        "markers", "integration: mark test as integration test"
+    )
+
+def pytest_collection_modifyitems(config, items):
+    """Modify test collection based on markers"""
+    if config.getoption("--no-slow"):
+        skip_slow = pytest.mark.skip(reason="--no-slow option given")
+        for item in items:
+            if "slow" in item.keywords:
+                item.add_marker(skip_slow)
+
+def pytest_addoption(parser):
+    """Add custom command line options"""
+    parser.addoption(
+        "--no-slow",
+        action="store_true", 
+        default=False,
+        help="skip slow tests"
+    )
+    parser.addoption(
+        "--integration-only",
+        action="store_true",
+        default=False, 
+        help="run only integration tests"
+    )

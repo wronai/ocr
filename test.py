@@ -399,7 +399,7 @@ def run_integration_test():
 
     try:
         # Import głównej klasy
-        from pdf_processor import PDFOCRProcessor
+        from proc import PDFOCRProcessor
 
         # Test inicjalizacji
         with tempfile.TemporaryDirectory() as tmp_dir:
