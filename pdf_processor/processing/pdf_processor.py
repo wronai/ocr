@@ -57,6 +57,10 @@ class PDFProcessorConfig:
     save_svg: bool = True
     save_text: bool = True
     
+    # Multi-page SVG options
+    combine_pages: bool = True  # Whether to combine all pages into a single SVG
+    page_spacing: int = 20      # Space between pages in the combined SVG (pixels)
+    
     # Retry configuration
     max_retries: int = 3
     
@@ -75,6 +79,7 @@ class PDFProcessorConfig:
         self.max_workers = max(1, min(os.cpu_count() or 1, self.max_workers))
         self.timeout = max(30, self.timeout)  # Minimum 30 seconds
         self.max_retries = max(0, self.max_retries)
+        self.page_spacing = max(0, self.page_spacing)  # Ensure non-negative
         
         # Ensure output directory exists
         ensure_directory_exists(self.output_dir)
@@ -187,21 +192,36 @@ class PDFProcessor:
                         'type': type(e).__name__
                     })
             
-            # Generate a combined result
-            combined_text = "\n\n".join(
-                pr.get('text', '') for pr in page_results if pr.get('text')
-            )
-            
-            # Save combined results if we have multiple pages
-            if len(page_results) > 1 and combined_text.strip():
-                text_output_path = pdf_output_dir / f"{pdf_path.stem}_combined.txt"
-                with open(text_output_path, 'w', encoding='utf-8') as f:
-                    f.write(combined_text)
+            # Generate combined results if we have multiple pages
+            if len(page_results) > 1:
+                # Save combined text
+                combined_text = "\n\n".join(
+                    pr.get('text', '') for pr in page_results if pr.get('text')
+                )
                 
-                result['output_files'].append({
-                    'type': 'combined_text',
-                    'path': str(text_output_path)
-                })
+                if combined_text.strip():
+                    text_output_path = pdf_output_dir / f"{pdf_path.stem}_combined.txt"
+                    with open(text_output_path, 'w', encoding='utf-8') as f:
+                        f.write(combined_text)
+                    
+                    result['output_files'].append({
+                        'type': 'combined_text',
+                        'path': str(text_output_path)
+                    })
+                
+                # Generate combined SVG if enabled
+                if self.config.combine_pages and self.config.save_svg:
+                    svg_output_path = pdf_output_dir / f"{pdf_path.stem}_combined.svg"
+                    self._generate_multi_page_svg(
+                        page_results=page_results,
+                        output_path=svg_output_path,
+                        title=pdf_path.stem
+                    )
+                    
+                    result['output_files'].append({
+                        'type': 'combined_svg',
+                        'path': str(svg_output_path)
+                    })
             
             # Update result
             result.update({
@@ -308,6 +328,10 @@ class PDFProcessor:
             result['text'] = best_result.text
             result['confidence'] = best_result.confidence
             
+            # Store the best result and image path for multi-page SVG
+            result['ocr_result'] = best_result
+            result['original_image_path'] = str(image_path)
+            
             # Save text output if requested
             if self.config.save_text and best_result.text.strip():
                 text_output_path = output_dir / f"{page_prefix}.txt"
@@ -344,6 +368,44 @@ class PDFProcessor:
                 exc_info=True
             )
             raise
+    
+    def _generate_multi_page_svg(
+        self,
+        page_results: List[Dict[str, Any]],
+        output_path: Union[str, Path],
+        title: str = "Document"
+    ) -> None:
+        """Generate a single SVG containing multiple pages with navigation.
+        
+        Args:
+            page_results: List of page results from _process_page
+            output_path: Path to save the combined SVG
+            title: Document title for the SVG
+        """
+        pages = []
+        
+        for page_result in page_results:
+            if 'ocr_result' not in page_result or 'original_image_path' not in page_result:
+                continue
+                
+            pages.append({
+                'image_path': page_result['original_image_path'],
+                'ocr_result': page_result['ocr_result'],
+                'title': f"Page {page_result.get('page', len(pages) + 1)}"
+            })
+        
+        if not pages:
+            self.logger.warning("No valid pages found for multi-page SVG")
+            return
+        
+        # Generate the multi-page SVG
+        self.svg_generator.generate_multi_page_svg(
+            pages=pages,
+            output_path=output_path,
+            page_width=self.config.page_width,
+            page_spacing=self.config.page_spacing,
+            title=title
+        )
     
     def cleanup_resources(self):
         """Clean up resources used by the processor."""

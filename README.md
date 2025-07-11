@@ -228,47 +228,78 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - The PyMuPDF team for excellent PDF processing
 - All contributors who have helped improve this project
 
-Then use it like this:
+## 🛠️ Development Workflow
+
+This project uses a script-based workflow for development tasks. All scripts are located in the `scripts/` directory and can be run directly or via the Makefile.
+
+### Setup
+
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   git clone https://github.com/wronai/ocr.git
+   cd ocr
+   ```
+
+2. Set up the development environment:
+   ```bash
+   make install-dev
+   ```
+   This will:
+   - Create and activate a virtual environment
+   - Install all development dependencies
+   - Set up pre-commit hooks
+
+### Common Development Tasks
+
 ```bash
-pdf-ocr process document.pdf --config config.yaml
-```
-
-## 📚 Documentation
-
-For detailed documentation, including API reference and advanced usage, please visit:
-
-📖 [PDF OCR Processor Documentation](https://pdf-ocr-processor.readthedocs.io/)
-
-## 🛠️ Development
-
-### Running Tests
-```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
 # Run tests
-pytest tests/
+make test
 
-# Run with coverage report
-pytest --cov=pdf_processor tests/
+# Run tests with coverage
+make test-cov
+
+# Format code
+make format
+
+# Run linters
+make lint
+
+# Start development server
+make dev-server
+
+# Build documentation
+make docs
+make docs-serve  # Serve docs locally
 ```
 
-### Code Style
-This project uses:
-- [Black](https://github.com/psf/black) for code formatting
-- [isort](https://github.com/PyCQA/isort) for import sorting
-- [mypy](https://mypy-lang.org/) for static type checking
+### Scripts Directory
 
-Run the following to format and check the code:
+All development and build scripts are located in the `scripts/` directory. See [scripts/README.md](scripts/README.md) for detailed documentation of each script.
+
+### Docker Development
+
 ```bash
-black .
-isort .
-mypy .
+# Build Docker image
+make docker-build
+
+# Start services with Docker Compose
+make docker-run
+
+# Stop services
+make docker-stop
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows our coding standards and includes appropriate tests.
 
 ## 📄 License
 
@@ -281,24 +312,16 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes in each version.**
    python proc.py --model llava:7b --workers 4
    ```
 
-3. **Zobacz wyniki**
-   - Otwórz plik `output/*_complete.svg` w przeglądarce
-   - Sprawdź szczegóły w `output/processing_report.json`
+3. **View Results**
+   - Open `output/*_complete.svg` in your browser
+   - Check details in `output/processing_report.json`
 
-## 📚 Dokumentacja
+## 📚 Documentation
 
-Pełna dokumentacja dostępna w katalogu [docs/](docs/):
+Full documentation is available in the [docs/](docs/) directory:
 
-- [📖 Przewodnik użytkownika](docs/user-guide/README.md)
-- [⚙️ Instalacja i konfiguracja](docs/getting-started/installation.md)
-- [🔧 Referencja API](docs/api-reference/README.md)
-- [❓ Często zadawane pytania](docs/faq/README.md)
-- [👨‍💻 Rozwój i współtworzenie](docs/development/contributing.md)
-
-## 📝 Licencja
-
-Ten projekt jest dostępny na licencji MIT. Zobacz plik [LICENSE](LICENSE) aby uzyskać więcej informacji.
-
-## 🤝 Współtworzenie
-
-Wkład jest mile widziany! Zobacz [przewodnik współtworzenia](docs/development/contributing.md) aby dowiedzieć się więcej o tym, jak możesz pomóc w rozwoju projektu.
+- [📖 User Guide](docs/user-guide/README.md)
+- [⚙️ Installation and Configuration](docs/getting-started/installation.md)
+- [🔧 API Reference](docs/api-reference/README.md)
+- [❓ Frequently Asked Questions](docs/faq/README.md)
+- [👨‍💻 Development and Contributing](docs/development/contributing.md)

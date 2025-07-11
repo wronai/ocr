@@ -15,116 +15,93 @@ help:
 	@echo "  clean        - Clean build artifacts"
 	@echo "  docker-build - Build Docker image"
 	@echo "  docker-run   - Run with Docker Compose"
+	@echo "  docker-stop  - Stop Docker containers"
 	@echo "  docs         - Build documentation"
+	@echo "  docs-serve   - Serve documentation locally"
 	@echo "  release      - Create release"
 	@echo "  release-upload - Upload release to PyPI"
 	@echo "  publish      - Build and publish package to PyPI"
+	@echo "  dev-setup    - Set up development environment"
+	@echo "  dev-server   - Start development server"
+	@echo "  setup        - Set up Python virtual environment"
+	@echo "  run          - Run the application"
+	@echo "  verify       - Run verification tests"
+	@echo "  models       - Download required models"
 
 # Installation
 install:
-	python3 -m pip install -r requirements.txt
+	./scripts/install.sh
 
 install-dev:
-	python3 -m pip install -r requirements-dev.txt
-	pre-commit install
+	./scripts/install-dev.sh
 
 # Testing
-.PHONY: test test-cov
-
 test:
-	@echo "🚀 Running tests..."
-	python3 -m pytest tests/ -v
+	./scripts/test.sh
 
 test-cov:
-	@echo "📊 Running tests with coverage..."
-	python3 -m pytest tests/ -v
+	./scripts/test-cov.sh
 
 # Code quality
 lint:
-	flake8 pdf_processor/ tests/
-	mypy pdf_processor/
-	pylint pdf_processor/
+	./scripts/lint.sh
 
 format:
-	black pdf_processor/ tests/
-	isort pdf_processor/ tests/
+	./scripts/format.sh
 
 # Cleanup
 clean:
-	find . -type f -name "*.pyc" -delete
-	find . -type d -name "__pycache__" -delete
-	find . -type d -name "*.egg-info" -exec rm -rf {} +
-	rm -rf build/ dist/ .coverage htmlcov/
+	./scripts/clean.sh
 
 # Docker
 docker-build:
-	docker build -t pdf-ocr-processor .
+	./scripts/docker-build.sh
 
 docker-run:
-	docker-compose up -d
+	./scripts/docker-run.sh
 
 docker-stop:
-	docker-compose down
+	./scripts/docker-stop.sh
 
 # Documentation
 docs:
-	cd docs && make html
+	./scripts/docs.sh
 
 docs-serve:
-	cd docs/_build/html && python -m http.server 8080
+	./scripts/docs-serve.sh
 
 # Release
-release: clean test lint
-	python setup.py sdist bdist_wheel
-	twine check dist/*
+release:
+	./scripts/release.sh
 
 release-upload:
-	twine upload dist/*
+	./scripts/release-upload.sh
 
 # Publish package to PyPI
 publish:
-	@echo "🚀 Starting publication process..."
-	$(MAKE) clean
-	@echo "\n🔍 Running tests..."
-	$(MAKE) test
-	@echo "\n🔍 Running linters..."
-	$(MAKE) lint
-	@echo "\n📦 Creating release..."
-	$(MAKE) release
-	@echo "\n🚀 Uploading to PyPI..."
-	$(MAKE) release-upload
-	@echo "\n✅ Successfully published package to PyPI"
-
+	./scripts/publish.sh
 
 # Development
-dev-setup: install-dev
-	mkdir -p documents output logs config
-	cp config/config.yaml.example config/config.yaml
+dev-setup:
+	./scripts/dev-setup.sh
 
 dev-server:
-	python -m pdf_processor.web
+	./scripts/dev-server.sh
 
 # Quick commands
 setup:
-	@echo "Setting up development environment..."
 	python3 -m venv .venv
 	. .venv/bin/activate && \
 		pip install --upgrade pip && \
 		pip install -e .
 
 run:
-	@if [ ! -f .venv/bin/activate ]; then \
-		echo "❌ Virtual environment not found. Please run 'make setup' first."; \
-		exit 1; \
-	fi
-	@echo "🚀 Starting PDF OCR Processor..."
-	. .venv/bin/activate && python -m pdf_processor
+	./scripts/dev-server.sh
 
 verify:
-	python3 test_runner.py --verify
+	./scripts/verify.sh
 
 models:
-	ollama pull llava:7b
-	ollama pull llama3.2-vision
+	./scripts/models.sh
 
 

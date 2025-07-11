@@ -186,20 +186,258 @@ class SVGGenerator:
         
         return config
     
-    def _add_styles(self, parent: ET.Element, config: SVGConfig) -> None:
-        """Add CSS styles to the SVG."""
+    def _add_styles(self, parent: ET.Element, config: SVGConfig, multi_page: bool = False) -> None:
+        """Add CSS styles to the SVG.
+        
+        Args:
+            parent: Parent SVG element to add styles to
+            config: SVG configuration
+            multi_page: Whether this is a multi-page SVG
+        """
         style = ET.SubElement(parent, 'style')
         style.set('type', 'text/css')
         
+        # Base styles
         css = """
+        /* Base styles */
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
         /* Text layer */
         .text-layer {
             font-family: %(font_family)s;
             font-size: %(font_size)fpx;
             line-height: %(line_height)f;
             fill: %(text_color)s;
+        }
+        
+        /* Selectable text */
+        .text-block {
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+        }
+        
+        .text-block:hover {
+            background-color: %(highlight_color)s;
+        }
+        
+        /* Multi-page specific styles */
+        .multi-page-svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%%;
+            height: auto;
+        }
+        
+        .page {
+            display: block;
+            margin: 0 auto %(page_spacing)fpx;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .page:last-child {
+            margin-bottom: 0;
+        }
+        
+        .page-image {
             pointer-events: none;
         }
+        
+        /* Navigation controls */
+        .nav-controls {
+            font-family: %(font_family)s;
+            font-size: 14px;
+        }
+        
+        .nav-button {
+            fill: #4a90e2;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+        
+        .nav-button:hover {
+            fill: #357abd;
+        }
+        
+        .nav-button-text {
+            fill: white;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        .page-indicator {
+            font-size: 14px;
+            fill: #333;
+        }
+        
+        /* Metadata */
+        .metadata {
+            font-family: %(font_family)s;
+            font-size: %(metadata_font_size)fpx;
+            fill: %(metadata_color)s;
+        }
+        
+        /* Watermark */
+        .watermark text {
+            font-family: Arial, sans-serif;
+            font-size: %(watermark_font_size)fpx;
+            fill: %(watermark_color)s;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* Debug styles */
+        .debug-box {
+            fill: none;
+            stroke: %(box_color)s;
+            stroke-width: 1;
+            pointer-events: none;
+        }"""
+        
+        # Add JavaScript for multi-page navigation
+        if multi_page:
+            css += """
+            
+            /* Hide all pages except the first one */
+            .page:not(:first-child) {
+                display: none;
+            }
+            
+            /* Navigation script */
+            .nav-script {
+                display: none;
+            }"""
+        
+        # Format CSS with config values
+        css_vars = {
+            'font_family': config.font_family,
+            'font_size': config.font_size,
+            'line_height': config.line_height,
+            'text_color': config.text_color,
+            'highlight_color': config.highlight_color,
+            'metadata_font_size': config.metadata_font_size,
+            'metadata_color': config.metadata_color,
+            'watermark_font_size': config.watermark_font_size,
+            'watermark_color': config.watermark_color,
+            'box_color': config.box_color,
+            'page_spacing': getattr(config, 'page_spacing', 20.0)
+        }
+        
+        style.text = css % css_vars
+        
+        # Add JavaScript for multi-page navigation
+        if multi_page:
+            script = ET.SubElement(parent, 'script', {
+                'type': 'application/ecmascript',
+                'class': 'nav-script'
+            })
+            
+            script.text = """
+            <![CDATA[
+            (function() {
+                var currentPage = 1;
+                var totalPages = document.querySelectorAll('.page').length;
+                var pageIndicator = document.getElementById('page-indicator');
+                var prevButton = document.getElementById('prev-button');
+                var nextButton = document.getElementById('next-button');
+                
+                function showPage(pageNum) {
+                    // Hide all pages
+                    var pages = document.querySelectorAll('.page');
+                    for (var i = 0; i < pages.length; i++) {
+                        pages[i].style.display = 'none';
+                    }
+                    
+                    // Show the selected page
+                    var page = document.getElementById('page-' + pageNum);
+                    if (page) {
+                        page.style.display = 'block';
+                    }
+                    
+                    // Update page indicator
+                    if (pageIndicator) {
+                        pageIndicator.textContent = 'Page ' + pageNum + ' of ' + totalPages;
+                    }
+                    
+                    // Update button states
+                    if (prevButton) {
+                        prevButton.style.opacity = pageNum <= 1 ? '0.5' : '1';
+                        prevButton.style.pointerEvents = pageNum <= 1 ? 'none' : 'all';
+                    }
+                    
+                    if (nextButton) {
+                        nextButton.style.opacity = pageNum >= totalPages ? '0.5' : '1';
+                        nextButton.style.pointerEvents = pageNum >= totalPages ? 'none' : 'all';
+                    }
+                    
+                    // Scroll to top
+                    window.scrollTo(0, 0);
+                }
+                
+                // Navigation functions
+                function goToPrevPage() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        showPage(currentPage);
+                    }
+                }
+                
+                function goToNextPage() {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        showPage(currentPage);
+                    }
+                }
+                
+                // Event listeners
+                if (prevButton) {
+                    prevButton.addEventListener('click', goToPrevPage);
+                }
+                
+                if (nextButton) {
+                    nextButton.addEventListener('click', goToNextPage);
+                }
+                
+                // Keyboard navigation
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowLeft') {
+                        goToPrevPage();
+                    } else if (e.key === 'ArrowRight') {
+                        goToNextPage();
+                    }
+                });
+                
+                // Initialize
+                showPage(1);
+                
+                // Make text selectable
+                var textBlocks = document.querySelectorAll('.text-block');
+                for (var i = 0; i < textBlocks.length; i++) {
+                    textBlocks[i].addEventListener('mousedown', function(e) {
+                        e.stopPropagation();
+                        this.style.userSelect = 'text';
+                        this.style.webkitUserSelect = 'text';
+                        this.style.MozUserSelect = 'text';
+                        this.style.msUserSelect = 'text';
+                    });
+                    
+                    textBlocks[i].addEventListener('mouseup', function() {
+                        var selection = window.getSelection();
+                        if (selection.toString().length > 0) {
+                            document.execCommand('copy');
+                        }
+                    });
+                }
+            })();
+            ]]>
+        </style>
         
         /* Text blocks */
         .text-block {
@@ -209,6 +447,7 @@ class SVGGenerator:
         /* Highlight on hover */
         .text-block:hover {
             fill: #ff0000;
+        }
             cursor: pointer;
         }
         
@@ -430,6 +669,295 @@ class SVGGenerator:
             'transform': 'rotate(-45, 50%, 50%)',
             'font-size': f"{config.watermark_font_size}px"
         }).text = config.watermark
+    
+    def generate_multi_page_svg(
+        self,
+        pages: List[Dict[str, Any]],
+        output_path: Optional[Union[str, Path]] = None,
+        **kwargs
+    ) -> str:
+        """Generate a single SVG file containing multiple pages with navigation.
+        
+        Args:
+            pages: List of page dictionaries, each containing:
+                - image_path: Path to the page image
+                - ocr_result: OCRResult for the page
+                - title: Optional page title (defaults to image filename)
+            output_path: Path to save the SVG file (optional)
+            **kwargs: Override SVGConfig settings
+            
+        Returns:
+            str: The generated SVG as a string
+        """
+        # Update config with any overrides
+        config = self._update_config(kwargs)
+        
+        # Calculate total dimensions
+        page_width = config.page_width or 800  # Default width if not specified
+        page_height = 0
+        page_heights = []
+        
+        # Process each page to get dimensions
+        for page in pages:
+            img_path = Path(page['image_path'])
+            try:
+                img_w, img_h = get_image_size(img_path)
+                # Maintain aspect ratio
+                width_ratio = page_width / img_w
+                height = img_h * width_ratio
+                page_heights.append(height)
+                page_height += height
+            except Exception as e:
+                self.logger.error(f"Error processing {img_path}: {e}")
+                page_heights.append(0)
+        
+        # Add spacing between pages (10px by default)
+        page_spacing = getattr(config, 'page_spacing', 10.0)
+        total_spacing = page_spacing * (len(pages) - 1)
+        page_height += total_spacing
+        
+        # Create root element with proper namespaces
+        svg_ns = "http://www.w3.org/2000/svg"
+        xlink_ns = "http://www.w3.org/1999/xlink"
+        
+        # Register namespaces
+        ET.register_namespace('', svg_ns)
+        ET.register_namespace('xlink', xlink_ns)
+        
+        # Create root element with proper namespaces
+        svg_attribs = {
+            'xmlns': svg_ns,
+            'xmlns:xlink': xlink_ns,
+            'width': f"{page_width}px",
+            'height': f"{page_height}px",
+            'viewBox': f"0 0 {page_width} {page_height}",
+            'class': 'multi-page-svg'
+        }
+        
+        svg = ET.Element('svg', attrib=svg_attribs)
+        
+        # Add title and description
+        title = ET.SubElement(svg, 'title')
+        title.text = f"Multi-page Document ({len(pages)} pages)"
+        
+        desc = ET.SubElement(svg, 'desc')
+        desc.text = f"Multi-page document with {len(pages)} pages and OCR text"
+        
+        # Add styles
+        self._add_styles(svg, config, multi_page=True)
+        
+        # Add background
+        if config.background_color.lower() != 'none':
+            bg = ET.SubElement(svg, 'rect', {
+                'x': '0',
+                'y': '0',
+                'width': '100%',
+                'height': '100%',
+                'fill': config.background_color
+            })
+        
+        # Add navigation controls
+        self._add_navigation_controls(svg, len(pages), page_width, config)
+        
+        # Add pages
+        current_y = 0
+        for i, (page, height) in enumerate(zip(pages, page_heights)):
+            if height == 0:
+                continue
+                
+            page_group = ET.SubElement(svg, 'g', {
+                'class': 'page',
+                'id': f'page-{i+1}',
+                'data-page': str(i+1)
+            })
+            
+            # Add page background
+            ET.SubElement(page_group, 'rect', {
+                'x': '0',
+                'y': str(current_y),
+                'width': str(page_width),
+                'height': str(height),
+                'fill': 'white',
+                'class': 'page-bg'
+            })
+            
+            # Add page image
+            img = ET.SubElement(page_group, 'image', {
+                'x': '0',
+                'y': str(current_y),
+                'width': str(page_width),
+                'height': str(height),
+                'preserveAspectRatio': 'xMidYMid meet',
+                'class': 'page-image'
+            })
+            
+            # Add image data
+            try:
+                with open(page['image_path'], 'rb') as f:
+                    img_data = base64.b64encode(f.read()).decode('ascii')
+                    img.set('{http://www.w3.org/1999/xlink}href', 
+                           f'data:image/png;base64,{img_data}')
+            except Exception as e:
+                self.logger.error(f"Error embedding image {page['image_path']}: {e}")
+            
+            # Add text blocks if available
+            if 'ocr_result' in page and page['ocr_result'] is not None:
+                # Create a group for text at the page's position
+                text_group = ET.SubElement(page_group, 'g', {
+                    'transform': f'translate(0, {current_y})',
+                    'class': 'text-layer'
+                })
+                self._add_text_blocks(text_group, page['ocr_result'], config)
+            
+            current_y += height + page_spacing
+        
+        # Add combined metadata
+        if config.include_metadata and any('ocr_result' in p for p in pages):
+            self._add_combined_metadata(svg, [p['ocr_result'] for p in pages if 'ocr_result' in p], config)
+        
+        # Add watermark if specified
+        if config.watermark:
+            self._add_watermark(svg, config)
+        
+        # Convert to string
+        xml_str = self._tostring(svg, config)
+        
+        # Save to file if path provided
+        if output_path:
+            output_path = Path(output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w', encoding=config.encoding) as f:
+                f.write(xml_str)
+            self.logger.info(f"Multi-page SVG saved to {output_path}")
+        
+        return xml_str
+    
+    def _add_navigation_controls(
+        self,
+        parent: ET.Element,
+        page_count: int,
+        page_width: float,
+        config: SVGConfig
+    ) -> None:
+        """Add navigation controls to the SVG."""
+        if page_count <= 1:
+            return
+            
+        nav_height = 40
+        nav_group = ET.SubElement(parent, 'g', {'class': 'nav-controls'})
+        
+        # Add navigation background
+        ET.SubElement(nav_group, 'rect', {
+            'x': '0',
+            'y': '0',
+            'width': str(page_width),
+            'height': str(nav_height),
+            'fill': '#f0f0f0',
+            'stroke': '#ccc',
+            'stroke-width': '1'
+        })
+        
+        # Add previous button
+        ET.SubElement(nav_group, 'rect', {
+            'x': '10',
+            'y': '5',
+            'width': '80',
+            'height': '30',
+            'rx': '4',
+            'class': 'nav-button',
+            'id': 'prev-button',
+            'data-action': 'prev'
+        })
+        
+        ET.SubElement(nav_group, 'text', {
+            'x': '50',
+            'y': '26',
+            'text-anchor': 'middle',
+            'class': 'nav-button-text'
+        }).text = 'Previous'
+        
+        # Add next button
+        ET.SubElement(nav_group, 'rect', {
+            'x': str(page_width - 90),
+            'y': '5',
+            'width': '80',
+            'height': '30',
+            'rx': '4',
+            'class': 'nav-button',
+            'id': 'next-button',
+            'data-action': 'next'
+        })
+        
+        ET.SubElement(nav_group, 'text', {
+            'x': str(page_width - 50),
+            'y': '26',
+            'text-anchor': 'middle',
+            'class': 'nav-button-text'
+        }).text = 'Next'
+        
+        # Add page indicator
+        ET.SubElement(nav_group, 'text', {
+            'x': str(page_width / 2),
+            'y': '26',
+            'text-anchor': 'middle',
+            'class': 'page-indicator',
+            'id': 'page-indicator'
+        }).text = 'Page 1 of {}'.format(page_count)
+    
+    def _add_combined_metadata(
+        self,
+        parent: ET.Element,
+        ocr_results: List[OCRResult],
+        config: SVGConfig
+    ) -> None:
+        """Add combined metadata from multiple OCR results."""
+        if not ocr_results:
+            return
+            
+        meta_group = ET.SubElement(parent, 'g', {
+            'class': 'metadata',
+            'transform': f'translate(0, 50)'  # Below navigation
+        })
+        
+        # Collect metadata from all pages
+        all_metadata = {}
+        models = set()
+        languages = set()
+        
+        for i, result in enumerate(ocr_results):
+            if result.model:
+                models.add(result.model)
+            if result.language:
+                languages.add(result.language)
+            
+            if result.metadata:
+                for k, v in result.metadata.items():
+                    if k not in all_metadata:
+                        all_metadata[k] = set()
+                    all_metadata[k].add(str(v))
+        
+        # Add metadata text
+        meta_text = [
+            f"Document: {len(ocr_results)} pages",
+            f"Models: {', '.join(sorted(models))}" if models else "",
+            f"Languages: {', '.join(sorted(languages))}" if languages else ""
+        ]
+        
+        # Add combined metadata
+        for key, values in sorted(all_metadata.items()):
+            meta_text.append(f"{key}: {', '.join(sorted(values))}")
+        
+        # Add metadata text elements
+        for i, line in enumerate(meta_text):
+            if not line.strip():
+                continue
+                
+            ET.SubElement(meta_group, 'text', {
+                'x': str(config.margin),
+                'y': str(20 + (i * (config.metadata_font_size * 1.2))),
+                'font-size': f"{config.metadata_font_size}px",
+                'class': 'metadata-text'
+            }).text = line
     
     def _tostring(self, element: ET.Element, config: SVGConfig) -> str:
         """Convert an XML element to a string with proper namespace handling."""

@@ -59,8 +59,7 @@ class TestPDFProcessor:
             from pdf_processor.models.ocr_result import OCRResult, TextBlock
             mock_ocr_result = OCRResult(
                 text="test text",
-                blocks=[TextBlock(text="test", x=0, y=0, width=100, height=100, confidence=0.9)],
-                success=True
+                blocks=[TextBlock(text="test", x=0, y=0, width=100, height=100, confidence=0.9)]
             )
             mock_ocr_result.metadata = {}
             processor.ocr_processor.extract_text.return_value = mock_ocr_result
@@ -83,15 +82,75 @@ class TestPDFProcessor:
         """Test successful PDF processing."""
         # Setup
         input_pdf = tmp_path / "test.pdf"
-        input_pdf.write_bytes(b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj")
+        # Create a minimal valid PDF file with one page
+        pdf_content = b"""%PDF-1.4
+1 0 obj
+<< /Type /Catalog
+   /Pages 2 0 R
+>>
+endobj
+2 0 obj
+<< /Type /Pages
+   /Kids [3 0 R]
+   /Count 1
+>>
+endobj
+3 0 obj
+<< /Type /Page
+   /Parent 2 0 R
+   /Resources << /Font << >> >>
+   /MediaBox [0 0 612 792]
+   /Contents 4 0 R
+>>
+endobj
+4 0 obj
+<< /Length 44 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Hello, World!) Tj
+ET
+endstream
+endobj
+5 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+>>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000069 00000 n 
+0000000121 00000 n 
+0000000192 00000 n 
+0000000242 00000 n 
+trailer
+<<
+  /Size 6
+  /Root 1 0 R
+  /Info << >>
+>>
+startxref
+320
+%%EOF
+"""
+        input_pdf.write_bytes(pdf_content)
         output_dir = tmp_path / "output"
+        
+        # Mock the PDF to images conversion
+        mock_processor._extract_page_as_image.return_value = "page_image_path"
         
         # Mock the _process_page method
         with patch.object(mock_processor, '_process_page') as mock_process_page:
             mock_process_page.return_value = {
                 "text": "test text",
                 "blocks": [{"text": "test", "bbox": [0, 0, 100, 100]}],
-                "success": True
+                "success": True,
+                "output_files": []
             }
             
             # Execute with explicit paths
