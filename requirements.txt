@@ -1,31 +1,31 @@
 # PDF OCR Processor - Python Dependencies
 
 # Core dependencies
-PyMuPDF>=1.23.0  # PDF processing
-Pillow>=10.0.0  # Image processing
-requests>=2.31.0  # HTTP requests
+PyMuPDF>=1.24.0  # PDF processing
+Pillow>=10.2.0  # Image processing
+requests>=2.32.0  # HTTP requests
 pyyaml>=6.0.1  # YAML configuration
-tqdm>=4.66.0  # Progress bars
-numpy>=1.24.0  # Numerical operations
-opencv-python>=4.8.0  # Image processing
-lxml>=4.9.0  # XML/HTML processing
-python-dotenv>=1.0.0  # Environment variable management
+tqdm>=4.66.4  # Progress bars
+numpy>=1.26.0  # Numerical operations
+opencv-python>=4.9.0.80  # Image processing
+lxml>=5.1.1  # XML/HTML processing
+python-dotenv>=1.0.1  # Environment variable management
 
 # Data processing and utilities
-pandas>=2.0.0  # Data manipulation
-python-dateutil>=2.8.2  # Date parsing
-pytz>=2023.3  # Timezone support
+pandas>=2.2.0  # Data manipulation
+python-dateutil>=2.9.0  # Date parsing
+pytz>=2024.1  # Timezone support
 
 # AI/ML dependencies
-torch>=2.0.0  # PyTorch for deep learning
-torchvision>=0.15.0  # Image datasets and models
-transformers>=4.30.0  # NLP models
-sentencepiece>=0.1.99  # Tokenization
+torch>=2.2.0  # PyTorch for deep learning
+torchvision>=0.17.0  # Image datasets and models
+transformers>=4.38.0  # NLP models
+sentencepiece>=0.2.0  # Tokenization
 
 # CLI and logging
-click>=8.1.0  # Command line interface
-rich>=13.4.0  # Rich text and formatting
-loguru>=0.7.0  # Logging
+click>=8.1.7  # Command line interface
+rich>=13.7.1  # Rich text and formatting
+loguru>=0.7.2  # Logging
 
 # Development dependencies (install with: pip install -e ".[dev]")
 # pytest>=7.4.0  # Testing framework

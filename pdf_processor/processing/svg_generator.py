@@ -466,10 +466,12 @@ class SVGGenerator:
         if isinstance(xml_str, bytes):
             xml_str = xml_str.decode(config.encoding)
         
-        # Ensure xlink namespace is properly declared in the output
-        if 'xmlns:xlink="http://www.w3.org/1999/xlink"' not in xml_str:
-            # If the namespace is missing, add it to the root element
-            xml_str = xml_str.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"', 1)
+        # Remove any existing xlink namespace declaration to prevent duplicates
+        xml_str = re.sub(r'\s+xmlns:xlink="[^"]*"', '', xml_str)
+        # Add the xlink namespace to the root svg element
+        xml_str = re.sub(r'<svg([^>]*)>', 
+                         r'<svg\1 xmlns:xlink="http://www.w3.org/1999/xlink">', 
+                         xml_str, 1)
         
         # Remove XML declaration if present (some SVG viewers don't like it)
         xml_str = re.sub(r'^<\?xml[^>]*>\s*', '', xml_str)
@@ -477,5 +479,9 @@ class SVGGenerator:
         # Ensure proper xlink namespace format
         xml_str = xml_str.replace('ns0:', 'xlink:')
         xml_str = xml_str.replace(':ns0', ':xlink')
+        
+        # Remove any duplicate attributes (just in case)
+        xml_str = re.sub(r'\s+([^\s=]+)="([^"]*)"(?=(?:[^>]*?\s+[^=]+=|"[^"]*"[^>]*>|$))', 
+                        r' \1="\2"', xml_str)
         
         return xml_str.strip()
